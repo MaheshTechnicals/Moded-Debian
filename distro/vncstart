@@ -1,0 +1,1 @@
+dbus-launch vncserver -geometry 1920x1080 -depth 24 -zliblevel 0 -name modded-debian -xstartup /usr/bin/xfce4-session
