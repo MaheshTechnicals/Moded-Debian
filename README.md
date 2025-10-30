@@ -8,9 +8,9 @@
 [![GitHub license](https://img.shields.io/github/license/MaheshTechnicals/Moded-Debian?style=for-the-badge)](./LICENSE)
 [![Last Commit](https://img.shields.io/github/last-commit/MaheshTechnicals/Moded-Debian?style=for-the-badge)](https://github.com/MaheshTechnicals/Moded-Debian/commits/main)
 
-Run **Debian Linux GUI on Termux** with enhanced features, preinstalled tools, and beautiful UI.  
-Developed and maintained by **Mahesh Technicals** for Linux lovers who want a full Debian desktop experience on Android.
-
+**Run Debian Linux GUI on Android using Termux — fast, stable, and beautifully customized.**  
+Experience the power of a full Debian desktop environment directly on your Android device with **Modded Debian by Mahesh Technicals.**  
+This enhanced version comes with preinstalled developer tools, optimized performance, and a modern graphical interface that brings the true Linux experience to mobile.
 ---
 
 ## 🚀 Key Features
@@ -27,13 +27,20 @@ Developed and maintained by **Mahesh Technicals** for Linux lovers who want a fu
 ---
 
 ## 📦 Installation Guide
+### 🧩 Step 1 — Install Termux & Termux:API
 
-### Step 1 — Install Termux
-Download the latest Termux app from [Termux.com](https://termux.com).
+To get started, you need to install both the **Termux** app and the **Termux:API** add-on.  
+These two applications work together to enable full system functionality and hardware integration.
+
+#### 📱 Download Links
+- **🔗 Termux App (v0.118.3)** — [Download from GitHub](https://github.com/termux/termux-app/releases/tag/v0.118.3)  
+- **🔗 Termux:API Add-on (v0.53.0)** — [Download from GitHub](https://github.com/termux/termux-api/releases/tag/v0.53.0)
+
+> 💡 **Note:** Both apps are officially maintained on GitHub. Avoid downloading from the Google Play Store, as it may contain outdated versions.
 
 ### Step 2 — Clone Repository and Setup
 ```bash
-yes | pkg upgrade
+apt update && apt upgrade -y
 pkg install git wget -y
 git clone --depth=1 https://github.com/MaheshTechnicals/Moded-Debian.git
 cd Moded-Debian
@@ -162,6 +169,16 @@ If you like this project, please:
 ### 🔍 SEO Keywords
 
 `debian termux`, `debian android`, `linux on android`, `termux debian setup`, `vnc viewer termux`, `moded debian`, `maheshthechnicals debian`, `debian xfce termux`, `proot distro debian`, `install debian termux gui`, `debian vnc setup android`
+
+---
+
+## 💖 Support The Project
+
+If you find this tool helpful and want to support my work, please consider buying me a coffee!
+
+<a href="https://www.paypal.com/paypalme/Varma161" target="_blank"><img src="https://www.buymeacoffee.com/assets/img/custom_images/orange_img.png" alt="Buy Me A Coffee" style="height: 41px !important;width: 174px !important;box-shadow: 0px 3px 2px 0px rgba(190, 190, 190, 0.5) !important;-webkit-box-shadow: 0px 3px 2px 0px rgba(190, 190, 190, 0.5) !important;" ></a>
+
+- **UPI:** `maheshtechnicals@apl`
 
 ---
 
