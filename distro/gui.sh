@@ -96,20 +96,18 @@ install_apt() {
 	done
 }
 
+# ---- Updated install_vscode: use external code.sh installer ----
 install_vscode() {
-    # This method is distro-agnostic and works fine on Debian
-	[[ $(command -v code) ]] && echo "${Y}VSCode is already Installed!${W}" || {
-		echo -e "${G}Installing ${Y}VSCode${W}"
-		curl -fsSL https://packages.microsoft.com/keys/microsoft.asc | gpg --dearmor > packages.microsoft.gpg
-		install -o root -g root -m 644 packages.microsoft.gpg /etc/apt/trusted.gpg.d/
-		echo "deb [arch=amd64,arm64,armhf signed-by=/etc/apt/trusted.gpg.d/packages.microsoft.gpg] https://packages.microsoft.com/repos/code stable main" > /etc/apt/sources.list.d/vscode.list
-		apt update -y
-		apt install code -y
-		echo "Patching.."
-		curl -fsSL https://raw.githubusercontent.com/modded-ubuntu/modded-ubuntu/master/patches/code.desktop > /usr/share/applications/code.desktop
-		echo -e "${C} Visual Studio Code Installed Successfully\n${W}"
-	}
+    [[ $(command -v code) ]] && echo "${Y}VSCode is already Installed!${W}" || {
+        echo -e "${G}Installing ${Y}VSCode via external installer${W}"
+        # download the installer script as /tmp/code.sh and run with -i
+        downloader "/tmp/code.sh" "https://raw.githubusercontent.com/MaheshTechnicals/Kali-Nethunter/refs/heads/main/vscode"
+        chmod +x /tmp/code.sh
+        bash /tmp/code.sh -i
+        echo -e "${C} Visual Studio Code Installed Successfully\n${W}"
+    }
 }
+# -----------------------------------------------------------------
 
 install_sublime() {
     # This method is distro-agnostic and works fine on Debian
@@ -232,7 +230,7 @@ downloader(){
 	echo "Downloading $(basename $1)..."
 	curl --progress-bar --insecure --fail \
 		 --retry-connrefused --retry 3 --retry-delay 2 \
-		  --location --output ${path} "$2"
+		 --location --output ${path} "$2"
 }
 
 sound_fix() {
@@ -261,9 +259,30 @@ rem_icon() {
 	done
 }
 
+# ---- New: create a permanent alias 'l' => 'ls' system-wide ----
+add_alias_l() {
+    # Create profile.d file for login shells
+    cat > /etc/profile.d/alias_l.sh <<'EOF'
+# alias l for ls
+alias l='ls'
+EOF
+    chmod 644 /etc/profile.d/alias_l.sh
+
+    # Ensure interactive non-login shells also get the alias (bash)
+    if [ -f /etc/bash.bashrc ]; then
+        grep -qxF "alias l='ls'" /etc/bash.bashrc || echo "alias l='ls'" >> /etc/bash.bashrc
+    fi
+
+    echo -e "${G}Alias 'l' -> 'ls' installed system-wide.${W}"
+}
+# ---------------------------------------------------------------
+
 config() {
 	banner
 	sound_fix
+
+	# install alias
+	add_alias_l
 
 	apt-key adv --keyserver keyserver.ubuntu.com --recv-keys 3B4FE6ACC0B21F32
 	yes | apt upgrade
