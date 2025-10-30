@@ -9,8 +9,10 @@
 [![Last Commit](https://img.shields.io/github/last-commit/MaheshTechnicals/Moded-Debian?style=for-the-badge)](https://github.com/MaheshTechnicals/Moded-Debian/commits/main)
 
 **Run Debian Linux GUI on Android using Termux — fast, stable, and beautifully customized.**  
-Experience the power of a full Debian desktop environment directly on your Android device with **Modded Debian by Mahesh Technicals.**  
+Experience the power of a full Debian desktop environment directly on your Android device with Modded Debian by Mahesh Technicals.
+
 This enhanced version comes with preinstalled developer tools, optimized performance, and a modern graphical interface that brings the true Linux experience to mobile.
+
 ---
 
 ## 🚀 Key Features
