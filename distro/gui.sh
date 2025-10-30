@@ -146,7 +146,7 @@ install_firefox() {
 	[[ $(command -v firefox) ]] && echo "${Y}Firefox is already Installed!${W}\n" || {
 		echo -e "${G}Installing ${Y}Firefox${W}"
         # This external script is the only potential point of failure if it's Ubuntu-specific
-		bash <(curl -fsSL "https://raw.githubusercontent.com/MaheshTechnicals/modded-ubuntu/refs/heads/mt/distro/firefox.sh")
+		bash <(curl -fsSL "https://raw.githubusercontent.com/MaheshTechnicals/Moded-Debian/refs/heads/main/distro/firefox.sh")
 		echo -e "${G} Firefox Installed Successfully\n${W}"
 	}
 }
@@ -274,11 +274,11 @@ config() {
 
 	echo -e "${R} [${W}-${R}]${C} Downloading Required Files..\n"${W}
     # These URLs still point to modded-ubuntu. See note below.
-	downloader "fonts.tar.gz" "https://github.com/modded-ubuntu/modded-ubuntu/releases/download/config/fonts.tar.gz"
-	downloader "icons.tar.gz" "https://github.com/MaheshTechnicals/modded-ubuntu/releases/download/config/icons.tar.gz"
-	downloader "wallpaper.tar.gz" "https://github.com/MaheshTechnicals/modded-ubuntu/releases/download/config/wallpaper.tar.gz"
-	downloader "gtk-themes.tar.gz" "https://github.com/MaheshTechnicals/modded-ubuntu/releases/download/config/gtk-themes.tar.gz"
-	downloader "ubuntu-settings.tar.gz" "https://github.com/MaheshTechnicals/modded-ubuntu/releases/download/config/ubuntu-settings.tar.gz"
+	downloader "fonts.tar.gz" "https://github.com/MaheshTechnicals/Moded-Debian/releases/download/config/fonts.tar.gz"
+	downloader "icons.tar.gz" "https://github.com/MaheshTechnicals/Moded-Debian/releases/download/config/icons.tar.gz"
+	downloader "wallpaper.tar.gz" "https://github.com/MaheshTechnicals/Moded-Debian/releases/download/config/wallpaper.tar.gz"
+	downloader "gtk-themes.tar.gz" "https://github.com/MaheshTechnicals/Moded-Debian/releases/download/config/gtk-themes.tar.gz"
+	downloader "ubuntu-settings.tar.gz" "https://github.com/MaheshTechnicals/Moded-Debian/releases/download/config/ubuntu-settings.tar.gz"
 
 	echo -e "${R} [${W}-${R}]${C} Unpacking Files..\n"${W}
 	tar -xvzf fonts.tar.gz -C "/usr/local/share/fonts/"
