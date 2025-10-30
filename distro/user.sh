@@ -17,7 +17,7 @@ ${Y}/_____/_____/_____/___/_/  |_/_/ |_/
 ${W}
 	EOF
 
-	echo -e "${G}💻 Debian GUI Setup Script by Mahesh Technicals\n${W}"
+	echo -e "${G}💻 Debian User Setup Script by Mahesh Technicals\n${W}"
 }
 
 
