@@ -1,4 +1,9 @@
 #!/bin/bash
+# ────────────────────────────────
+# 💻 Debian GUI Setup Script by Mahesh Technicals
+# Version: 5.0
+# Description: Auto-installs Debian GUI + XFCE + Browsers + IDEs + Custom Terminal Style
+# ────────────────────────────────
 
 # ────────────────────────────────
 # 🎨 COLOR DEFINITIONS
@@ -8,6 +13,7 @@ G="$(printf '\033[1;32m')" # Green
 Y="$(printf '\033[1;33m')" # Yellow
 W="$(printf '\033[1;37m')" # White
 C="$(printf '\033[1;36m')" # Cyan
+B="$(printf '\033[1;34m')" # Blue
 arch=$(uname -m)
 username=$(getent group sudo | awk -F ':' '{print $4}' | cut -d ',' -f1)
 
@@ -120,10 +126,6 @@ install_chromium() {
 		apt install gnupg2 software-properties-common --no-install-recommends -y
 		echo -e "deb http://ftp.debian.org/debian buster main\ndeb http://ftp.debian.org/debian buster-updates main" >> /etc/apt/sources.list
 		apt-key adv --keyserver keyserver.ubuntu.com --recv-keys DCC9EFBF77E11517
-		apt-key adv --keyserver keyserver.ubuntu.com --recv-keys 648ACFD622F3D138
-		apt-key adv --keyserver keyserver.ubuntu.com --recv-keys AA8E81B4331F7F50
-		apt-key adv --keyserver keyserver.ubuntu.com --recv-keys 112695A0E562B32A
-		apt-key adv --keyserver keyserver.ubuntu.com --recv-keys 3B4FE6ACC0B21F32
 		apt update -y
 		apt install chromium -y
 		sed -i 's/chromium %U/chromium --no-sandbox %U/g' /usr/share/applications/chromium.desktop
@@ -312,7 +314,7 @@ config() {
 }
 
 # ────────────────────────────────
-# 🌈 TERMINAL STYLE INSTALLER
+# 🌈 TERMINAL STYLE INSTALLER (FIXED)
 # ────────────────────────────────
 install_terminal_style() {
 	banner
@@ -320,7 +322,12 @@ install_terminal_style() {
 	temp_dir=$(mktemp -d)
 	downloader "${temp_dir}/fansy.sh" "https://raw.githubusercontent.com/MaheshTechnicals/Moded-Debian/refs/heads/main/distro/fansy.sh"
 	chmod +x "${temp_dir}/fansy.sh"
-	sudo bash "${temp_dir}/fansy.sh"
+	
+	# ✅ Run as root (no sudo) to prevent hanging
+	bash "${temp_dir}/fansy.sh" || {
+		echo -e "${R} [!] Failed to apply terminal style!${W}"
+	}
+	
 	rm -rf "${temp_dir}"
 	echo -e "\n${G}✨ Terminal Styling Applied Successfully!${W}\n"
 }
