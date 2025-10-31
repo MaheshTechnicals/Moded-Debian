@@ -1,50 +1,35 @@
 #!/bin/bash
-# ────────────────────────────────
-# 💻 Debian GUI Setup Script by Mahesh Technicals
-# Version: 5.0
-# Description: Auto-installs Debian GUI + XFCE + Browsers + IDEs + Custom Terminal Style
-# ────────────────────────────────
 
-# ────────────────────────────────
-# 🎨 COLOR DEFINITIONS
-# ────────────────────────────────
-R="$(printf '\033[1;31m')" # Red
-G="$(printf '\033[1;32m')" # Green
-Y="$(printf '\033[1;33m')" # Yellow
-W="$(printf '\033[1;37m')" # White
-C="$(printf '\033[1;36m')" # Cyan
-B="$(printf '\033[1;34m')" # Blue
+R="$(printf '\033[1;31m')"
+G="$(printf '\033[1;32m')"
+Y="$(printf '\033[1;33m')"
+W="$(printf '\033[1;37m')"
+C="$(printf '\033[1;36m')"
 arch=$(uname -m)
 username=$(getent group sudo | awk -F ':' '{print $4}' | cut -d ',' -f1)
 
-# ────────────────────────────────
-# ⚙️ BASIC CHECKS
-# ────────────────────────────────
 check_root(){
 	if [ "$(id -u)" -ne 0 ]; then
-		echo -ne " ${R}Run this program as root!\n\n${W}"
+		echo -ne " ${R}Run this program as root!\n\n"${W}
 		exit 1
 	fi
 }
 
 # 🧩 Fix D-Bus machine-id to prevent VNC startup error
 fix_machineid() {
-	echo -e "${C}Checking D-Bus machine-id...${W}"
-	if [ ! -s /etc/machine-id ]; then
-		echo -e "${Y}Machine-id missing or empty. Generating new one...${W}"
-		rm -f /var/lib/dbus/machine-id /etc/machine-id
-		dbus-uuidgen --ensure=/etc/machine-id
-		dbus-uuidgen --ensure
-		ln -sf /etc/machine-id /var/lib/dbus/machine-id
-		echo -e "${G}Machine-id successfully created.${W}"
-	else
-		echo -e "${G}Machine-id already exists.${W}"
-	fi
+    echo -e "${C}Checking D-Bus machine-id...${W}"
+    if [ ! -s /etc/machine-id ]; then
+        echo -e "${Y}Machine-id missing or empty. Generating new one...${W}"
+        rm -f /var/lib/dbus/machine-id /etc/machine-id
+        dbus-uuidgen --ensure=/etc/machine-id
+        dbus-uuidgen --ensure
+        ln -sf /etc/machine-id /var/lib/dbus/machine-id
+        echo -e "${G}Machine-id successfully created.${W}"
+    else
+        echo -e "${G}Machine-id already exists.${W}"
+    fi
 }
 
-# ────────────────────────────────
-# 💫 BANNER
-# ────────────────────────────────
 banner() {
 	clear
 	cat <<- EOF
@@ -55,22 +40,45 @@ ${C} / /_/ / /___/ /_/ // // ___ |/ /|  /
 ${Y}/_____/_____/_____/___/_/  |_/_/ |_/   
 ${W}
 	EOF
-	echo -e "${G}💻 Debian GUI Setup Script by Mahesh Technicals${W}\n"
+
+	echo -e "${G}💻 Debian GUI Setup Script by Mahesh Technicals\n${W}"
 }
 
-# ────────────────────────────────
-# 📦 PACKAGE INSTALLATION
-# ────────────────────────────────
+
+
+note() {
+	banner
+	echo -e " ${G} [-] Successfully Installed !\n"${W}
+	sleep 1
+	cat <<- EOF
+		 ${G}[-] Type ${C}vncstart${G} to run Vncserver.
+		 ${G}[-] Type ${C}vncstop${G} to stop Vncserver.
+
+		 ${C}Install VNC VIEWER Apk on your Device.
+
+		 ${C}Open VNC VIEWER & Click on + Button.
+
+		 ${C}Enter the Address localhost:1 & Name anything you like.
+
+		 ${C}Set the Picture Quality to High for better Quality.
+
+		 ${C}Click on Connect & Input the Password.
+
+		 ${C}Enjoy :D${W}
+	EOF
+}
+
 package() {
 	banner
-	echo -e "${R} [${W}-${R}]${C} Checking required packages...${W}"
+	echo -e "${R} [${W}-${R}]${C} Checking required packages..."${W}
 	apt-get update -y
 	apt install udisks2 -y
 	rm /var/lib/dpkg/info/udisks2.postinst
 	echo "" > /var/lib/dpkg/info/udisks2.postinst
 	dpkg --configure -a
 	apt-mark hold udisks2
-
+	
+    # These packages are all available in Debian
 	packs=(sudo gnupg2 curl nano git xz-utils at-spi2-core xfce4 xfce4-goodies xfce4-terminal librsvg2-common menu inetutils-tools dialog exo-utils tigervnc-standalone-server tigervnc-common tigervnc-tools dbus-x11 fonts-beng fonts-beng-extra gtk2-engines-murrine gtk2-engines-pixbuf apt-transport-https)
 	for hulu in "${packs[@]}"; do
 		type -p "$hulu" &>/dev/null || {
@@ -83,49 +91,52 @@ package() {
 	apt-get upgrade -y
 }
 
-# ────────────────────────────────
-# 📦 SMALL HELPER INSTALLER
-# ────────────────────────────────
 install_apt() {
 	for apt in "$@"; do
-		[[ $(command -v $apt) ]] && echo -e "${Y}${apt} is already Installed!${W}" || {
+		[[ `command -v $apt` ]] && echo "${Y}${apt} is already Installed!${W}" || {
 			echo -e "${G}Installing ${Y}${apt}${W}"
 			apt install -y ${apt}
 		}
 	done
 }
 
-# ────────────────────────────────
-# 💻 SOFTWARE INSTALLERS
-# ────────────────────────────────
+# ---- Updated install_vscode: use external code.sh installer ----
 install_vscode() {
-	[[ $(command -v code) ]] && echo -e "${Y}VSCode is already Installed!${W}" || {
-		echo -e "${G}Installing ${Y}VSCode via external installer${W}"
-		downloader "/tmp/code.sh" "https://raw.githubusercontent.com/MaheshTechnicals/Kali-Nethunter/refs/heads/main/vscode"
-		chmod +x /tmp/code.sh
-		bash /tmp/code.sh -i
-		echo -e "${C} Visual Studio Code Installed Successfully\n${W}"
-	}
+    [[ $(command -v code) ]] && echo "${Y}VSCode is already Installed!${W}" || {
+        echo -e "${G}Installing ${Y}VSCode via external installer${W}"
+        # download the installer script as /tmp/code.sh and run with -i
+        downloader "/tmp/code.sh" "https://raw.githubusercontent.com/MaheshTechnicals/Kali-Nethunter/refs/heads/main/vscode"
+        chmod +x /tmp/code.sh
+        bash /tmp/code.sh -i
+        echo -e "${C} Visual Studio Code Installed Successfully\n${W}"
+    }
 }
+# -----------------------------------------------------------------
 
 install_sublime() {
-	[[ $(command -v subl) ]] && echo -e "${Y}Sublime is already Installed!${W}" || {
+    # This method is distro-agnostic and works fine on Debian
+	[[ $(command -v subl) ]] && echo "${Y}Sublime is already Installed!${W}" || {
 		apt install gnupg2 software-properties-common --no-install-recommends -y
 		echo "deb https://download.sublimetext.com/ apt/stable/" | tee /etc/apt/sources.list.d/sublime-text.list
-		curl -fsSL https://download.sublimetext.com/sublimehq-pub.gpg | gpg --dearmor > /etc/apt/trusted.gpg.d/sublime.gpg 2>/dev/null
+		curl -fsSL https://download.sublimetext.com/sublimehq-pub.gpg | gpg --dearmor > /etc/apt/trusted.gpg.d/sublime.gpg 2> /dev/null
 		apt update -y
-		apt install sublime-text -y
+		apt install sublime-text -y 
 		echo -e "${C} Sublime Text Editor Installed Successfully\n${W}"
 	}
 }
 
 install_chromium() {
-	[[ $(command -v chromium) ]] && echo -e "${Y}Chromium is already Installed!${W}\n" || {
+    # This logic already used Debian repos, so it's perfect
+	[[ $(command -v chromium) ]] && echo "${Y}Chromium is already Installed!${W}\n" || {
 		echo -e "${G}Installing ${Y}Chromium${W}"
 		apt purge chromium* chromium-browser* snapd -y
 		apt install gnupg2 software-properties-common --no-install-recommends -y
 		echo -e "deb http://ftp.debian.org/debian buster main\ndeb http://ftp.debian.org/debian buster-updates main" >> /etc/apt/sources.list
 		apt-key adv --keyserver keyserver.ubuntu.com --recv-keys DCC9EFBF77E11517
+		apt-key adv --keyserver keyserver.ubuntu.com --recv-keys 648ACFD622F3D138
+		apt-key adv --keyserver keyserver.ubuntu.com --recv-keys AA8E81B4331F7F50
+		apt-key adv --keyserver keyserver.ubuntu.com --recv-keys 112695A0E562B32A
+		apt-key adv --keyserver keyserver.ubuntu.com --recv-keys 3B4FE6ACC0B21F32
 		apt update -y
 		apt install chromium -y
 		sed -i 's/chromium %U/chromium --no-sandbox %U/g' /usr/share/applications/chromium.desktop
@@ -134,16 +145,14 @@ install_chromium() {
 }
 
 install_firefox() {
-	[[ $(command -v firefox) ]] && echo -e "${Y}Firefox is already Installed!${W}\n" || {
+	[[ $(command -v firefox) ]] && echo "${Y}Firefox is already Installed!${W}\n" || {
 		echo -e "${G}Installing ${Y}Firefox${W}"
+        # This external script is the only potential point of failure if it's Ubuntu-specific
 		bash <(curl -fsSL "https://raw.githubusercontent.com/MaheshTechnicals/Moded-Debian/refs/heads/main/distro/firefox.sh")
 		echo -e "${G} Firefox Installed Successfully\n${W}"
 	}
 }
 
-# ────────────────────────────────
-# 🎛️ INTERACTIVE SOFTWARE SELECTION
-# ────────────────────────────────
 install_softwares() {
 	banner
 	cat <<- EOF
@@ -181,7 +190,7 @@ install_softwares() {
 
 	EOF
 	read -n1 -p "${R} [${G}~${R}]${Y} Select an Option: ${G}" PLAYER_OPTION
-	banner
+	{ banner; sleep 1; }
 
 	if [[ ${BROWSER_OPTION} == 2 ]]; then
 		install_chromium
@@ -202,6 +211,7 @@ install_softwares() {
 			install_vscode
 		else
 			echo -e "${Y} [!] Skipping IDE Installation\n"
+			sleep 1
 		fi
 	}
 
@@ -213,12 +223,11 @@ install_softwares() {
 		install_apt "mpv" "vlc"
 	else
 		echo -e "${Y} [!] Skipping Media Player Installation\n"
+		sleep 1
 	fi
+
 }
 
-# ────────────────────────────────
-# 🌐 DOWNLOADER HELPER
-# ────────────────────────────────
 downloader(){
 	path="$1"
 	[[ -e "$path" ]] && rm -rf "$path"
@@ -228,137 +237,115 @@ downloader(){
 		 --location --output ${path} "$2"
 }
 
-# ────────────────────────────────
-# 🔊 SOUND + DISPLAY FIX
-# ────────────────────────────────
 sound_fix() {
+    # Changed to Debian
 	echo "$(echo "bash ~/.sound" | cat - /data/data/com.termux/files/usr/bin/debian)" > /data/data/com.termux/files/usr/bin/debian
-	echo "export DISPLAY=:1" >> /etc/profile
-	echo "export PULSE_SERVER=127.0.0.1" >> /etc/profile
+	echo "export DISPLAY=":1"" >> /etc/profile
+	echo "export PULSE_SERVER=127.0.0.1" >> /etc/profile 
 	source /etc/profile
 }
 
-# ────────────────────────────────
-# 🧹 CLEANUP
-# ────────────────────────────────
 rem_theme() {
 	theme=(Bright Daloa Emacs Moheli Retro Smoke)
 	for rmi in "${theme[@]}"; do
-		rm -rf /usr/share/themes/"$rmi"
+		type -p "$rmi" &>/dev/null || {
+			rm -rf /usr/share/themes/"$rmi"
+		}
 	done
 }
 
 rem_icon() {
 	fonts=(hicolor LoginIcons ubuntu-mono-light)
 	for rmf in "${fonts[@]}"; do
-		rm -rf /usr/share/icons/"$rmf"
+		type -p "$rmf" &>/dev/null || {
+			rm -rf /usr/share/icons/"$rmf"
+		}
 	done
 }
 
-# ────────────────────────────────
-# ⚡ ADD ALIAS
-# ────────────────────────────────
+# ---- New: create a permanent alias 'l' => 'ls' system-wide ----
 add_alias_l() {
-	cat > /etc/profile.d/alias_l.sh <<'EOF'
+    # Create profile.d file for login shells
+    cat > /etc/profile.d/alias_l.sh <<'EOF'
 # alias l for ls
 alias l='ls'
 EOF
-	chmod 644 /etc/profile.d/alias_l.sh
-	grep -qxF "alias l='ls'" /etc/bash.bashrc || echo "alias l='ls'" >> /etc/bash.bashrc
-	echo -e "${G}Alias 'l' -> 'ls' installed system-wide.${W}"
-}
+    chmod 644 /etc/profile.d/alias_l.sh
 
-# ────────────────────────────────
-# 🧩 CONFIGURATION & THEMES
-# ────────────────────────────────
+    # Ensure interactive non-login shells also get the alias (bash)
+    if [ -f /etc/bash.bashrc ]; then
+        grep -qxF "alias l='ls'" /etc/bash.bashrc || echo "alias l='ls'" >> /etc/bash.bashrc
+    fi
+
+    echo -e "${G}Alias 'l' -> 'ls' installed system-wide.${W}"
+}
+# ---------------------------------------------------------------
+
 config() {
 	banner
 	sound_fix
+
+	# install alias
 	add_alias_l
 
 	apt-key adv --keyserver keyserver.ubuntu.com --recv-keys 3B4FE6ACC0B21F32
 	yes | apt upgrade
 	yes | apt install gtk2-engines-murrine gtk2-engines-pixbuf sassc optipng inkscape libglib2.0-dev-bin
-
 	mv -vf /usr/share/backgrounds/xfce/xfce-verticals.png /usr/share/backgrounds/xfce/xfceverticals-old.png
 	temp_folder=$(mktemp -d -p "$HOME")
-	banner
-	echo -e "${R} [${W}-${R}]${C} Downloading Required Files..${W}\n"
+	{ banner; sleep 1; cd $temp_folder; }
 
+	echo -e "${R} [${W}-${R}]${C} Downloading Required Files..\n"${W}
+    # These URLs still point to modded-ubuntu. See note below.
 	downloader "fonts.tar.gz" "https://github.com/MaheshTechnicals/Moded-Debian/releases/download/config/fonts.tar.gz"
 	downloader "icons.tar.gz" "https://github.com/MaheshTechnicals/Moded-Debian/releases/download/config/icons.tar.gz"
 	downloader "wallpaper.tar.gz" "https://github.com/MaheshTechnicals/Moded-Debian/releases/download/config/wallpaper.tar.gz"
 	downloader "gtk-themes.tar.gz" "https://github.com/MaheshTechnicals/Moded-Debian/releases/download/config/gtk-themes.tar.gz"
 	downloader "ubuntu-settings.tar.gz" "https://github.com/MaheshTechnicals/Moded-Debian/releases/download/config/ubuntu-settings.tar.gz"
 
-	echo -e "${R} [${W}-${R}]${C} Unpacking Files..${W}\n"
+	echo -e "${R} [${W}-${R}]${C} Unpacking Files..\n"${W}
 	tar -xvzf fonts.tar.gz -C "/usr/local/share/fonts/"
 	tar -xvzf icons.tar.gz -C "/usr/share/icons/"
 	tar -xvzf wallpaper.tar.gz -C "/usr/share/backgrounds/xfce/"
 	tar -xvzf gtk-themes.tar.gz -C "/usr/share/themes/"
-	tar -xvzf ubuntu-settings.tar.gz -C "/home/$username/"
+	tar -xvzf ubuntu-settings.tar.gz -C "/home/$username/"	
 	rm -fr $temp_folder
 
-	echo -e "${R} [${W}-${R}]${C} Purging Unnecessary Files..${W}"
+	echo -e "${R} [${W}-${R}]${C} Purging Unnecessary Files.."${W}
 	rem_theme
 	rem_icon
 
-	echo -e "${R} [${W}-${R}]${C} Rebuilding Font Cache..${W}\n"
+	echo -e "${R} [${W}-${R}]${C} Rebuilding Font Cache..\n"${W}
 	fc-cache -fv
 
-	echo -e "${R} [${W}-${R}]${C} Upgrading the System..${W}\n"
+	echo -e "${R} [${W}-${R}]${C} Upgrading the System..\n"${W}
 	apt update
 	yes | apt upgrade
 	apt clean
 	yes | apt autoremove
+
 }
 
-# ────────────────────────────────
-# 🌈 TERMINAL STYLE INSTALLER (FIXED)
-# ────────────────────────────────
+# ─────────────────────────────
+# 🌈 Fancy Terminal Style Installer
+# ─────────────────────────────
 install_terminal_style() {
-	banner
-	echo -e "${R} [${W}-${R}]${C} Applying Custom Terminal Style...${W}\n"
-	temp_dir=$(mktemp -d)
-	downloader "${temp_dir}/fansy.sh" "https://raw.githubusercontent.com/MaheshTechnicals/Moded-Debian/refs/heads/main/distro/fansy.sh"
-	chmod +x "${temp_dir}/fansy.sh"
-	
-	# ✅ Run as root (no sudo) to prevent hanging
-	bash "${temp_dir}/fansy.sh" || {
-		echo -e "${R} [!] Failed to apply terminal style!${W}"
-	}
-	
-	rm -rf "${temp_dir}"
-	echo -e "\n${G}✨ Terminal Styling Applied Successfully!${W}\n"
+    banner
+    echo -e "${C}💫 Applying Fancy Terminal Style...${W}\n"
+    temp_dir=$(mktemp -d)
+    curl -fsSL "https://raw.githubusercontent.com/MaheshTechnicals/Moded-Debian/refs/heads/main/distro/fansy.sh" -o "${temp_dir}/fansy.sh"
+    chmod +x "${temp_dir}/fansy.sh"
+    bash "${temp_dir}/fansy.sh"
+    rm -rf "${temp_dir}"
+    echo -e "\n${G}✨ Terminal Styling Applied Successfully!${W}\n"
 }
 
-# ────────────────────────────────
-# 📜 COMPLETION NOTE
-# ────────────────────────────────
-note() {
-	banner
-	echo -e " ${G} [-] Successfully Installed !\n${W}"
-	sleep 1
-	cat <<- EOF
-		 ${G}[-] Type ${C}vncstart${G} to run Vncserver.
-		 ${G}[-] Type ${C}vncstop${G} to stop Vncserver.
-
-		 ${C}Install VNC VIEWER Apk on your Device.
-		 ${C}Open VNC VIEWER & Click on + Button.
-		 ${C}Enter Address: localhost:1 & any Name you like.
-		 ${C}Set Picture Quality: High for better Quality.
-		 ${C}Click on Connect & Input the Password.
-		 ${C}Enjoy :D${W}
-	EOF
-}
-
-# ────────────────────────────────
-# 🛠️ MAIN EXECUTION FLOW
-# ────────────────────────────────
+# ----------------------------
+# 🛠️ Main Execution Flow
 check_root
 fix_machineid
 package
 install_softwares
-config
 install_terminal_style
+config
 note
