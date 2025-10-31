@@ -332,6 +332,15 @@ install_terminal_style() {
 	echo -e "\n${G}✨ Terminal Styling Applied Successfully!${W}\n"
 }
 
+# ----------------------------
+# 🧹 Final Cleanup Function
+cleanup_files() {
+    echo -e "\n${Y}🧹 Cleaning up temporary files...${W}"
+    rm -f ~/fonts.tar.gz ~/gtk-themes.tar.gz ~/icons.tar.gz ~/wallpaper.tar.gz ~/ubuntu-settings.tar.gz ~/gui.sh 2>/dev/null
+    echo -e "${G}✅ All temporary files removed successfully!${W}\n"
+}
+
+
 # ────────────────────────────────
 # 📜 COMPLETION NOTE
 # ────────────────────────────────
@@ -362,3 +371,4 @@ install_softwares
 config
 install_terminal_style
 note
+cleanup_files
