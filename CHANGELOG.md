@@ -4,6 +4,18 @@ This project follows [Semantic Versioning](https://semver.org/) and the [Keep a 
 
 ---
 
+## [v1.1.1] - 2025-10-31
+### 🪄 Updated
+- **GUI setup script** to properly integrate the **Fancy Terminal Style (fansy.sh)** installer.
+- **VS Code setup script** improved for smoother installation, updated dependencies, and better integration with the Debian GUI environment.
+
+### 🧹 Improvements
+- Enhanced cleanup logic and safe handling of temporary directories in terminal styling.
+- Improved terminal color output and formatting for a more vibrant, modern user experience.
+- Refactored sections for improved readability, maintainability, and consistency across scripts.
+
+---
+
 ## [v1.1.0] - 2025-10-30
 ### 🚀 Added
 - **remove.sh** script to easily uninstall the Modded Debian environment and clean related configurations.

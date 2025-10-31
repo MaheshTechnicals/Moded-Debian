@@ -25,6 +25,7 @@ This enhanced version comes with preinstalled developer tools, optimized perform
 ✅ **Code Ready** – Visual Studio Code (arm64/aarch64) & Sublime Text  
 ✅ **User-Friendly Installer** – Designed for beginners  
 ✅ **Beautiful UI** – Modern icons, wallpapers, and system themes  
+✅ **Beautiful Terminal UI** –  Fancy Terminal Style 
 
 ---
 
