@@ -270,6 +270,17 @@ rem_icon() {
 	done
 }
 
+# ---- Auto-clear terminal on every Debian login ----
+add_clear_on_login() {
+    cat > /etc/profile.d/clear_on_login.sh <<'EOF'
+# Clear terminal on login for a clean session
+clear
+EOF
+    chmod 644 /etc/profile.d/clear_on_login.sh
+    echo -e "${G}Auto-clear on login enabled.${W}"
+}
+# ---------------------------------------------------
+
 # ---- New: create a permanent alias 'l' => 'ls' system-wide ----
 add_alias_l() {
     # Create profile.d file for login shells
@@ -291,6 +302,9 @@ EOF
 config() {
 	banner
 	sound_fix
+
+	# auto-clear terminal on login
+	add_clear_on_login
 
 	# install alias
 	add_alias_l
