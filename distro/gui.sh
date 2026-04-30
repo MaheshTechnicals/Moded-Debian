@@ -104,6 +104,9 @@ install_apt() {
 install_vscode() {
     [[ $(command -v code) ]] && echo "${Y}VSCode is already Installed!${W}" || {
         echo -e "${G}Installing ${Y}VSCode via external installer${W}"
+        # Install binutils required by the VSCode installer script
+        echo -e "${G}Installing ${Y}binutils${G} (required for VSCode installer)${W}"
+        apt-get install -y binutils
         # download the installer script as /tmp/code.sh and run with -i
         downloader "/tmp/code.sh" "https://raw.githubusercontent.com/MaheshTechnicals/Kali-Nethunter/refs/heads/main/vscode"
         chmod +x /tmp/code.sh
@@ -140,6 +143,8 @@ install_chromium() {
 		apt update -y
 		apt install chromium -y
 		sed -i 's/chromium %U/chromium --no-sandbox %U/g' /usr/share/applications/chromium.desktop
+		# Comment out buster lines so they don't break future apt update
+		sed -i '/buster/s/^/#/' /etc/apt/sources.list
 		echo -e "${G} Chromium Installed Successfully\n${W}"
 	}
 }
@@ -147,8 +152,10 @@ install_chromium() {
 install_firefox() {
 	[[ $(command -v firefox) ]] && echo "${Y}Firefox is already Installed!${W}\n" || {
 		echo -e "${G}Installing ${Y}Firefox${W}"
-        # This external script is the only potential point of failure if it's Ubuntu-specific
-		bash <(curl -fsSL "https://raw.githubusercontent.com/MaheshTechnicals/Moded-Debian/refs/heads/main/distro/firefox.sh")
+		# Download firefox.sh first so sudo bash can reference a real file path
+		downloader "/tmp/firefox.sh" "https://raw.githubusercontent.com/MaheshTechnicals/Moded-Debian/refs/heads/main/distro/firefox.sh"
+		chmod +x /tmp/firefox.sh
+		sudo bash /tmp/firefox.sh
 		echo -e "${G} Firefox Installed Successfully\n${W}"
 	}
 }
