@@ -79,7 +79,7 @@ package() {
 	apt-mark hold udisks2
 	
     # These packages are all available in Debian
-	packs=(sudo gnupg2 curl nano git xz-utils at-spi2-core xfce4 xfce4-goodies xfce4-terminal librsvg2-common menu inetutils-tools dialog exo-utils tigervnc-standalone-server tigervnc-common tigervnc-tools dbus-x11 fonts-beng fonts-beng-extra gtk2-engines-murrine gtk2-engines-pixbuf apt-transport-https)
+	packs=(sudo gnupg2 curl nano git xz-utils at-spi2-core xfce4 xfce4-goodies xfce4-terminal librsvg2-common menu inetutils-tools dialog exo-utils tigervnc-standalone-server tigervnc-common tigervnc-tools dbus-x11 fonts-beng fonts-beng-extra gtk2-engines-murrine gtk2-engines-pixbuf apt-transport-https gh)
 	for hulu in "${packs[@]}"; do
 		type -p "$hulu" &>/dev/null || {
 			echo -e "\n${R} [${W}-${R}]${G} Installing package : ${Y}$hulu${W}"
@@ -128,6 +128,16 @@ install_sublime() {
 	}
 }
 
+install_cursor() {
+	[[ $(command -v cursor) ]] && echo "${Y}Cursor is already Installed!${W}" || {
+		echo -e "${G}Installing ${Y}Cursor${W}"
+		downloader "/tmp/cursor.sh" "https://raw.githubusercontent.com/MaheshTechnicals/cursor-free-vip-termux/refs/heads/main/cursor.sh"
+		chmod +x /tmp/cursor.sh
+		sudo bash /tmp/cursor.sh -i
+		echo -e "${C} Cursor Editor Installed Successfully\n${W}"
+	}
+}
+
 install_chromium() {
     # This logic already used Debian repos, so it's perfect
 	[[ $(command -v chromium) ]] && echo "${Y}Chromium is already Installed!${W}\n" || {
@@ -160,6 +170,66 @@ install_firefox() {
 	}
 }
 
+install_brave() {
+	[[ $(command -v brave-browser) ]] && echo "${Y}Brave is already Installed!${W}\n" || {
+		echo -e "${G}Installing ${Y}Brave${W}"
+		downloader "/tmp/brave.sh" "https://raw.githubusercontent.com/MaheshTechnicals/Moded-Debian/refs/heads/main/distro/brave.sh"
+		chmod +x /tmp/brave.sh
+		sudo bash /tmp/brave.sh
+		echo -e "${G} Brave Installed Successfully\n${W}"
+	}
+}
+
+install_languages() {
+	banner
+	cat <<- EOF
+		${Y} ---${G} Select Coding Languages ${Y}---
+
+		${C} [${W}1${C}] Node.js
+		${C} [${W}2${C}] Python
+		${C} [${W}3${C}] All (Node.js + Python)
+		${C} [${W}4${C}] Skip! (Default)
+
+	EOF
+	read -n1 -p "${R} [${G}~${R}]${Y} Select an Option: ${G}" LANG_OPTION
+	{ banner; sleep 1; }
+
+	install_node_latest() {
+		echo -e "${G}Installing ${Y}Node.js (latest)${W}"
+		apt-get update -y
+		apt-get install -y nodejs npm
+		npm install -g n
+		n latest
+		npm install -g npm@latest
+		command -v node >/dev/null 2>&1 && node -v
+	}
+
+	install_python_latest() {
+		echo -e "${G}Installing ${Y}Python (latest from repos)${W}"
+		apt-get update -y
+		apt-get install -y python3 python3-pip python3-venv
+		python3 -m pip install --upgrade pip
+		command -v python3 >/dev/null 2>&1 && python3 --version
+	}
+
+	if [[ ${LANG_OPTION} == 1 ]]; then
+		install_node_latest
+	elif [[ ${LANG_OPTION} == 2 ]]; then
+		install_python_latest
+	elif [[ ${LANG_OPTION} == 3 ]]; then
+		install_node_latest
+		install_python_latest
+	else
+		echo -e "${Y} [!] Skipping Language Installation\n"
+		sleep 1
+		return
+	fi
+
+	# Refresh shell environment for version checks
+	hash -r
+	source /etc/profile
+}
+
 install_softwares() {
 	banner
 	cat <<- EOF
@@ -167,7 +237,8 @@ install_softwares() {
 
 		${C} [${W}1${C}] Firefox (Default)
 		${C} [${W}2${C}] Chromium
-		${C} [${W}3${C}] Both (Firefox + Chromium)
+		${C} [${W}3${C}] Brave
+		${C} [${W}4${C}] All (Firefox + Chromium + Brave)
 
 	EOF
 	read -n1 -p "${R} [${G}~${R}]${Y} Select an Option: ${G}" BROWSER_OPTION
@@ -177,9 +248,9 @@ install_softwares() {
 		cat <<- EOF
 			${Y} ---${G} Select IDE ${Y}---
 
-			${C} [${W}1${C}] Sublime Text Editor (Recommended)
+			${C} [${W}1${C}] Cursor AI Editor (Recommended)
 			${C} [${W}2${C}] Visual Studio Code
-			${C} [${W}3${C}] Both (Sublime + VSCode)
+			${C} [${W}3${C}] All (Cursor + VSCode)
 			${C} [${W}4${C}] Skip! (Default)
 
 		EOF
@@ -192,7 +263,7 @@ install_softwares() {
 
 		${C} [${W}1${C}] MPV Media Player (Recommended)
 		${C} [${W}2${C}] VLC Media Player
-		${C} [${W}3${C}] Both (MPV + VLC)
+		${C} [${W}3${C}] All (MPV + VLC)
 		${C} [${W}4${C}] Skip! (Default)
 
 	EOF
@@ -202,19 +273,22 @@ install_softwares() {
 	if [[ ${BROWSER_OPTION} == 2 ]]; then
 		install_chromium
 	elif [[ ${BROWSER_OPTION} == 3 ]]; then
+		install_brave
+	elif [[ ${BROWSER_OPTION} == 4 ]]; then
 		install_firefox
 		install_chromium
+		install_brave
 	else
 		install_firefox
 	fi
 
 	[[ ("$arch" != 'armhf') || ("$arch" != *'armv7'*) ]] && {
 		if [[ ${IDE_OPTION} == 1 ]]; then
-			install_sublime
+			install_cursor
 		elif [[ ${IDE_OPTION} == 2 ]]; then
 			install_vscode
 		elif [[ ${IDE_OPTION} == 3 ]]; then
-			install_sublime
+			install_cursor
 			install_vscode
 		else
 			echo -e "${Y} [!] Skipping IDE Installation\n"
@@ -232,6 +306,8 @@ install_softwares() {
 		echo -e "${Y} [!] Skipping Media Player Installation\n"
 		sleep 1
 	fi
+
+	install_languages
 
 }
 
@@ -297,6 +373,20 @@ EOF
 
     echo -e "${G}Alias 'l' -> 'ls' installed system-wide.${W}"
 }
+
+add_alias_cl() {
+	cat > /etc/profile.d/alias_cl.sh <<'EOF'
+# alias cl for clear
+alias cl='clear'
+EOF
+	chmod 644 /etc/profile.d/alias_cl.sh
+
+	if [ -f /etc/bash.bashrc ]; then
+		grep -qxF "alias cl='clear'" /etc/bash.bashrc || echo "alias cl='clear'" >> /etc/bash.bashrc
+	fi
+
+	echo -e "${G}Alias 'cl' -> 'clear' installed system-wide.${W}"
+}
 # ---------------------------------------------------------------
 
 config() {
@@ -308,6 +398,7 @@ config() {
 
 	# install alias
 	add_alias_l
+	add_alias_cl
 
 	apt-key adv --keyserver keyserver.ubuntu.com --recv-keys 3B4FE6ACC0B21F32
 	yes | apt upgrade
