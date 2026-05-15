@@ -133,7 +133,14 @@ install_cursor() {
 		echo -e "${G}Installing ${Y}Cursor${W}"
 		downloader "/tmp/cursor.sh" "https://raw.githubusercontent.com/MaheshTechnicals/cursor-free-vip-termux/refs/heads/main/cursor.sh"
 		chmod +x /tmp/cursor.sh
-		printf '\n' | sudo bash /tmp/cursor.sh -i
+		apt-get install -y expect
+		expect <<'EOF'
+set timeout -1
+spawn sudo bash /tmp/cursor.sh -i
+expect "Do you want to return to the main menu? (y/n):"
+send "\r"
+expect eof
+EOF
 		echo -e "${C} Cursor Editor Installed Successfully\n${W}"
 	}
 }
