@@ -133,7 +133,7 @@ install_cursor() {
 		echo -e "${G}Installing ${Y}Cursor${W}"
 		downloader "/tmp/cursor.sh" "https://raw.githubusercontent.com/MaheshTechnicals/cursor-free-vip-termux/refs/heads/main/cursor.sh"
 		chmod +x /tmp/cursor.sh
-		sudo bash /tmp/cursor.sh -i
+		printf '\n' | sudo bash /tmp/cursor.sh -i
 		echo -e "${C} Cursor Editor Installed Successfully\n${W}"
 	}
 }
