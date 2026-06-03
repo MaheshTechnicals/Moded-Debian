@@ -7,11 +7,11 @@ LOG_FILE="/var/log/debian_setup.log"
 
 # Create a clean log file or empty existing one
 touch "$LOG_FILE" 2>/dev/null || LOG_FILE="/tmp/debian_setup.log"
-echo "=== Setup Log Started At $(date) ===" > "$LOG_FILE"
+echo "=== Setup Log Started At $(date) ===" >"$LOG_FILE"
 
 # Helper function to write messages cleanly to the log file
 log_msg() {
-    echo "[$(date '+%Y-%m-%d %H:%M:%S')] $1" >> "$LOG_FILE"
+    echo "[$(date '+%Y-%m-%d %H:%M:%S')] $1" >>"$LOG_FILE"
 }
 
 # Redirect all background installation processes to log without cluttering screen
@@ -21,9 +21,9 @@ run_silent() {
     shift
     log_msg "STARTING: $task_name"
     echo -e "${C}Running: ${Y}$task_name...${W}"
-    
+
     # Execute the command, appending stdout and stderr directly to the log file
-    if "$@" >> "$LOG_FILE" 2>&1; then
+    if "$@" >>"$LOG_FILE" 2>&1; then
         log_msg "SUCCESS: $task_name"
         echo -e "${G}✓ $task_name completed successfully.${W}"
     else
@@ -61,8 +61,8 @@ downloader() {
     log_msg "Downloading $2 to $path"
     # Added --silent but kept --show-error so failures print to the log
     curl --silent --show-error --insecure --fail \
-         --retry-connrefused --retry 3 --retry-delay 2 \
-         --location --output "${path}" "$2"
+        --retry-connrefused --retry 3 --retry-delay 2 \
+        --location --output "${path}" "$2"
 }
 
 check_root() {
@@ -92,13 +92,12 @@ fix_machineid() {
 
 banner() {
     clear
-    cat <<- EOF
-${C}    ____  __________  _______    _   __
-${Y}   / __ \/ ____/ __ )/  _/   |  / | / /
-${G}  / / / / __/ / __  |/ // /| | /  |/ / 
-${C} / /_/ / /___/ /_/ // // ___ |/ /|  /  
-${Y}/_____/_____/_____/___/_/  |_/_/ |_/   
-${W}
+    cat << 'EOF'
+ ____  __________  _______    _   __
+/ __ \/ ____/ __ )/  _/   |  / | / /
+/ / / / __/ / __  |/ // /| | /  |/ / 
+/ /_/ / /___/ /_/ // // ___ |/ /|  /  
+/_____/_____/_____/___/_/  |_/_/ |_/   
 EOF
     echo -e "${G}💻 Debian GUI Setup Script by Mahesh Technicals\n${W}"
 }
@@ -108,21 +107,21 @@ note() {
     echo -e " ${G} [-] Successfully Installed !\n${W}"
     echo -e " ${Y} [*] You can check all execution logs at: $LOG_FILE\n${W}"
     sleep 1
-    cat <<- EOF
-         ${G}[-] Type ${C}vncstart${G} to run Vncserver.
-         ${G}[-] Type ${C}vncstop${G} to stop Vncserver.
+    cat << 'EOF'
+         [-] Type vncstart to run Vncserver.
+         [-] Type vncstop to stop Vncserver.
 
-         ${C}Install VNC VIEWER Apk on your Device.
+         Install VNC VIEWER Apk on your Device.
 
-         ${C}Open VNC VIEWER & Click on + Button.
+         Open VNC VIEWER & Click on + Button.
 
-         ${C}Enter the Address localhost:1 & Name anything you like.
+         Enter the Address localhost:1 & Name anything you like.
 
-         ${C}Set the Picture Quality to High for better Quality.
+         Set the Picture Quality to High for better Quality.
 
-         ${C}Click on Connect & Input the Password.
+         Click on Connect & Input the Password.
 
-         ${C}Enjoy :D${W}
+         Enjoy :D
 EOF
     log_msg "=== Setup Completed Successfully ==="
 }
@@ -130,18 +129,18 @@ EOF
 package() {
     banner
     echo -e "${R} [${W}-${R}]${C} Checking required packages...${W}"
-    
+
     run_silent "Updating apt repositories" apt-get update -y
     run_silent "Installing udisks2 package" apt install udisks2 -y
-    
+
     rm -f /var/lib/dpkg/info/udisks2.postinst
-    echo "" > /var/lib/dpkg/info/udisks2.postinst
-    
+    echo "" >/var/lib/dpkg/info/udisks2.postinst
+
     run_silent "Configuring DPKG" dpkg --configure -a
     run_silent "Holding udisks2 package package changes" apt-mark hold udisks2
 
     packs=(sudo gnupg2 curl nano git xz-utils at-spi2-core xfce4 xfce4-goodies xfce4-terminal librsvg2-common menu inetutils-tools dialog exo-utils tigervnc-standalone-server tigervnc-common tigervnc-tools dbus-x11 fonts-beng fonts-beng-extra gtk2-engines-murrine gtk2-engines-pixbuf apt-transport-https gh)
-    
+
     for hulu in "${packs[@]}"; do
         if ! dpkg -s "$hulu" &>/dev/null; then
             run_silent "Installing environment dependency: $hulu" apt-get install "$hulu" -y --no-install-recommends
@@ -175,8 +174,8 @@ install_vscode() {
 install_sublime() {
     [[ $(command -v subl) ]] && echo "${Y}Sublime is already Installed!${W}" || {
         run_silent "Installing common environment dependencies for Sublime" apt install gnupg2 software-properties-common --no-install-recommends -y
-        echo "deb https://download.sublimetext.com/ apt/stable/" | tee /etc/apt/sources.list.d/sublime-text.list >> "$LOG_FILE" 2>&1
-        curl -fsSL https://download.sublimetext.com/sublimehq-pub.gpg | gpg --dearmor > /etc/apt/trusted.gpg.d/sublime.gpg 2>> "$LOG_FILE"
+        echo "deb https://download.sublimetext.com/ apt/stable/" | tee /etc/apt/sources.list.d/sublime-text.list >>"$LOG_FILE" 2>&1
+        curl -fsSL https://download.sublimetext.com/sublimehq-pub.gpg | gpg --dearmor >/etc/apt/trusted.gpg.d/sublime.gpg 2>>"$LOG_FILE"
         run_silent "Updating source indexes for Sublime repository structural layout" apt update -y
         run_silent "Installing custom build Sublime Text editor binary" apt install sublime-text -y
     }
@@ -187,9 +186,9 @@ install_cursor() {
         run_silent "Downloading Cursor setup installer script files" downloader "/tmp/cursor.sh" "https://raw.githubusercontent.com/MaheshTechnicals/cursor-free-vip-termux/refs/heads/main/cursor.sh"
         chmod +x /tmp/cursor.sh
         run_silent "Installing automated expect engine tracking package" apt-get install -y expect
-        
+
         log_msg "Spawning interactive expect shell container sequence for Cursor configuration"
-        expect <<EOF >> "$LOG_FILE" 2>&1
+        expect <<EOF >>"$LOG_FILE" 2>&1
 set timeout -1
 spawn sudo bash /tmp/cursor.sh -i
 expect "Do you want to return to the main menu? (y/n):"
@@ -228,7 +227,7 @@ install_brave() {
 
     mkdir -p /usr/share/xfce4/helpers
     if [ ! -f /usr/share/xfce4/helpers/brave-browser.desktop ]; then
-        cat > /usr/share/xfce4/helpers/brave-browser.desktop <<'EOF'
+        cat >/usr/share/xfce4/helpers/brave-browser.desktop <<'EOF'
 [Desktop Entry]
 Version=1.0
 Type=X-XFCE-Helper
@@ -241,8 +240,8 @@ EOF
         log_msg "Registered XFCE application fallback desktop structures explicitly for Brave Web Browser."
     fi
 
-    command -v update-desktop-database >/dev/null 2>&1 && \
-        update-desktop-database /usr/share/applications >> "$LOG_FILE" 2>&1 && \
+    command -v update-desktop-database >/dev/null 2>&1 &&
+        update-desktop-database /usr/share/applications >>"$LOG_FILE" 2>&1 &&
         log_msg "Refreshed primary desktop app system records cleanly."
 }
 
@@ -251,16 +250,16 @@ set_default_browser() {
     log_msg "Initiating system default browser adjustments to default system mapping entries: Firefox"
 
     if command -v xdg-settings >/dev/null 2>&1 && [ -n "${DISPLAY:-}" ]; then
-        xdg-settings set default-web-browser firefox.desktop >> "$LOG_FILE" 2>&1 && \
+        xdg-settings set default-web-browser firefox.desktop >>"$LOG_FILE" 2>&1 &&
             log_msg "xdg-settings updated context browser pointers safely."
     fi
 
     if command -v update-alternatives >/dev/null 2>&1; then
-        update-alternatives --set x-www-browser "$(command -v firefox)" >> "$LOG_FILE" 2>&1 && \
+        update-alternatives --set x-www-browser "$(command -v firefox)" >>"$LOG_FILE" 2>&1 &&
             log_msg "update-alternatives points web hooks towards Firefox."
     fi
 
-    cat > /etc/profile.d/default_browser.sh <<'EOF'
+    cat >/etc/profile.d/default_browser.sh <<'EOF'
 export BROWSER=firefox
 EOF
     chmod 644 /etc/profile.d/default_browser.sh
@@ -270,7 +269,7 @@ EOF
         mkdir -p "$homedir/.config/xfce4"
         mkdir -p "$homedir/.config"
 
-        cat > "$homedir/.config/mimeapps.list" <<'EOF'
+        cat >"$homedir/.config/mimeapps.list" <<'EOF'
 [Default Applications]
 text/html=firefox.desktop
 x-scheme-handler/http=firefox.desktop
@@ -284,10 +283,10 @@ EOF
             if grep -q "^WebBrowser=" "$homedir/.config/xfce4/helpers.rc"; then
                 sed -i 's/^WebBrowser=.*/WebBrowser=firefox/' "$homedir/.config/xfce4/helpers.rc"
             else
-                echo "WebBrowser=firefox" >> "$homedir/.config/xfce4/helpers.rc"
+                echo "WebBrowser=firefox" >>"$homedir/.config/xfce4/helpers.rc"
             fi
         else
-            echo "WebBrowser=firefox" > "$homedir/.config/xfce4/helpers.rc"
+            echo "WebBrowser=firefox" >"$homedir/.config/xfce4/helpers.rc"
         fi
         log_msg "Modified desktop environment components tracking structure: $homedir/.config/xfce4/helpers.rc"
     done
@@ -295,17 +294,19 @@ EOF
 
 install_languages() {
     banner
-    cat <<- EOF
-         ${Y} ---${G} Select Coding Languages ${Y}---
+    cat << 'EOF'
+         --- Select Coding Languages ---
 
-         ${C} [${W}1${C}] Node.js
-         ${C} [${W}2${C}] Python
-         ${C} [${W}3${C}] All (Node.js + Python)
-         ${C} [${W}4${C}] Skip! (Default)
-
+         [1] Node.js
+         [2] Python
+         [3] All (Node.js + Python)
+         [4] Skip! (Default)
 EOF
     read -n1 -p "${R} [${G}~${R}]${Y} Select an Option: ${G}" LANG_OPTION
-    { banner; sleep 1; }
+    {
+        banner
+        sleep 1
+    }
 
     install_node_latest() {
         run_silent "Updating dependencies for JS environments" apt-get update -y
@@ -316,10 +317,10 @@ EOF
     }
 
     install_python_latest() {
-    run_silent "Updating repository tracking flags for python dependencies" apt-get update -y
-    run_silent "Installing Python core runtime environment modules and safe sandbox setups" apt-get install -y python3 python3-pip python3-venv
-    log_msg "Python environment installed. Note: Use 'python3 -m venv <env_name>' to safely create environments and manage pip."
-}
+        run_silent "Updating repository tracking flags for python dependencies" apt-get update -y
+        run_silent "Installing Python core runtime environment modules and safe sandbox setups" apt-get install -y python3 python3-pip python3-venv
+        log_msg "Python environment installed. Note: Use 'python3 -m venv <env_name>' to safely create environments and manage pip."
+    }
 
     if [[ ${LANG_OPTION} == 1 ]]; then
         install_node_latest
@@ -350,14 +351,13 @@ install_softwares() {
 
     [[ ("$arch" != 'armhf') || ("$arch" != *'armv7'*) ]] && {
         banner
-        cat <<- EOF
-             ${Y} ---${G} Select IDE ${Y}---
+        cat << 'EOF'
+             --- Select IDE ---
 
-             ${C} [${W}1${C}] Cursor AI Editor (Recommended)
-             ${C} [${W}2${C}] Visual Studio Code
-             ${C} [${W}3${C}] All (Cursor + VSCode)
-             ${C} [${W}4${C}] Skip! (Default)
-
+             [1] Cursor AI Editor (Recommended)
+             [2] Visual Studio Code
+             [3] All (Cursor + VSCode)
+             [4] Skip! (Default)
 EOF
         read -n1 -p "${R} [${G}~${R}]${Y} Select an Option: ${G}" IDE_OPTION
         banner
@@ -377,17 +377,19 @@ EOF
     }
 
     banner
-    cat <<- EOF
-         ${Y} ---${G} Media Player ${Y}---
+    cat << 'EOF'
+         --- Media Player ---
 
-         ${C} [${W}1${C}] MPV Media Player (Recommended)
-         ${C} [${W}2${C}] VLC Media Player
-         ${C} [${W}3${C}] All (MPV + VLC)
-         ${C} [${W}4${C}] Skip! (Default)
-
+         [1] MPV Media Player (Recommended)
+         [2] VLC Media Player
+         [3] All (MPV + VLC)
+         [4] Skip! (Default)
 EOF
     read -n1 -p "${R} [${G}~${R}]${Y} Select an Option: ${G}" PLAYER_OPTION
-    { banner; sleep 1; }
+    {
+        banner
+        sleep 1
+    }
 
     if [[ ${PLAYER_OPTION} == 1 ]]; then
         install_apt "mpv"
@@ -406,12 +408,12 @@ EOF
 
 sound_fix() {
     if ! grep -q "bash ~/.sound" "$TERMUX_BIN/debian" 2>/dev/null; then
-        echo "$(echo "bash ~/.sound" | cat - "$TERMUX_BIN/debian")" > "$TERMUX_BIN/debian"
+        echo "$(echo "bash ~/.sound" | cat - "$TERMUX_BIN/debian")" >"$TERMUX_BIN/debian"
         chmod +x "$TERMUX_BIN/debian"
         log_msg "Sound Fix: Embedded startup processing configurations inside Termux application launch files."
     fi
-    grep -qxF 'export DISPLAY=":1"' /etc/profile || echo 'export DISPLAY=":1"' >> /etc/profile
-    grep -qxF 'export PULSE_SERVER=127.0.0.1' /etc/profile || echo 'export PULSE_SERVER=127.0.0.1' >> /etc/profile
+    grep -qxF 'export DISPLAY=":1"' /etc/profile || echo 'export DISPLAY=":1"' >>/etc/profile
+    grep -qxF 'export PULSE_SERVER=127.0.0.1' /etc/profile || echo 'export PULSE_SERVER=127.0.0.1' >>/etc/profile
     source /etc/profile
 }
 
@@ -436,7 +438,7 @@ rem_icon() {
 }
 
 add_clear_on_login() {
-    cat > /etc/profile.d/clear_on_login.sh <<'EOF'
+    cat >/etc/profile.d/clear_on_login.sh <<'EOF'
 clear
 EOF
     chmod 644 /etc/profile.d/clear_on_login.sh
@@ -444,23 +446,23 @@ EOF
 }
 
 add_alias_l() {
-    cat > /etc/profile.d/alias_l.sh <<'EOF'
+    cat >/etc/profile.d/alias_l.sh <<'EOF'
 alias l='ls'
 EOF
     chmod 644 /etc/profile.d/alias_l.sh
     if [ -f /etc/bash.bashrc ]; then
-        grep -qxF "alias l='ls'" /etc/bash.bashrc || echo "alias l='ls'" >> /etc/bash.bashrc
+        grep -qxF "alias l='ls'" /etc/bash.bashrc || echo "alias l='ls'" >>/etc/bash.bashrc
     fi
     log_msg "System shortcut macro setup completed (l='ls')."
 }
 
 add_alias_cl() {
-    cat > /etc/profile.d/alias_cl.sh <<'EOF'
+    cat >/etc/profile.d/alias_cl.sh <<'EOF'
 alias cl='clear'
 EOF
     chmod 644 /etc/profile.d/alias_cl.sh
     if [ -f /etc/bash.bashrc ]; then
-        grep -qxF "alias cl='clear'" /etc/bash.bashrc || echo "alias cl='clear'" >> /etc/bash.bashrc
+        grep -qxF "alias cl='clear'" /etc/bash.bashrc || echo "alias cl='clear'" >>/etc/bash.bashrc
     fi
     log_msg "System shortcut macro setup completed (cl='clear')."
 }
@@ -475,28 +477,32 @@ config() {
 
     run_silent "Upgrading base package configurations before styling engine setups" apt upgrade -y
     run_silent "Installing rendering UI engines, theme toolkits and dependency setups" apt install gtk2-engines-murrine gtk2-engines-pixbuf sassc optipng inkscape libglib2.0-dev-bin -y
-    
-    mv -vf /usr/share/backgrounds/xfce/xfce-verticals.png /usr/share/backgrounds/xfce/xfce-verticals-old.png >> "$LOG_FILE" 2>&1 || true
-    
+
+    mv -vf /usr/share/backgrounds/xfce/xfce-verticals.png /usr/share/backgrounds/xfce/xfce-verticals-old.png >>"$LOG_FILE" 2>&1 || true
+
     temp_folder=$(mktemp -d -p "$HOME")
-    { banner; sleep 1; cd "$temp_folder" || exit; }
+    {
+        banner
+        sleep 1
+        cd "$temp_folder" || exit
+    }
 
     echo -e "${R} [${W}-${R}]${C} Downloading Required Files..\n${W}"
-    downloader "fonts.tar.gz"           "https://github.com/MaheshTechnicals/Moded-Debian/releases/download/config/fonts.tar.gz"
-    downloader "icons.tar.gz"           "https://github.com/MaheshTechnicals/Moded-Debian/releases/download/config/icons.tar.gz"
-    downloader "wallpaper.tar.gz"       "https://github.com/MaheshTechnicals/Moded-Debian/releases/download/config/wallpaper.tar.gz"
-    downloader "gtk-themes.tar.gz"      "https://github.com/MaheshTechnicals/Moded-Debian/releases/download/config/gtk-themes.tar.gz"
+    downloader "fonts.tar.gz" "https://github.com/MaheshTechnicals/Moded-Debian/releases/download/config/fonts.tar.gz"
+    downloader "icons.tar.gz" "https://github.com/MaheshTechnicals/Moded-Debian/releases/download/config/icons.tar.gz"
+    downloader "wallpaper.tar.gz" "https://github.com/MaheshTechnicals/Moded-Debian/releases/download/config/wallpaper.tar.gz"
+    downloader "gtk-themes.tar.gz" "https://github.com/MaheshTechnicals/Moded-Debian/releases/download/config/gtk-themes.tar.gz"
     downloader "debian-settings.tar.gz" "https://github.com/MaheshTechnicals/Moded-Debian/releases/download/config/debian-settings.tar.gz"
 
     echo -e "${R} [${W}-${R}]${C} Unpacking Files..\n${W}"
     log_msg "Extracting runtime style sheets and configuration packages to core system assets."
-    
-    tar -xvzf fonts.tar.gz           -C "/usr/local/share/fonts/" >> "$LOG_FILE" 2>&1
-    tar -xvzf icons.tar.gz           -C "/usr/share/icons/" >> "$LOG_FILE" 2>&1
-    tar -xvzf wallpaper.tar.gz       -C "/usr/share/backgrounds/xfce/" >> "$LOG_FILE" 2>&1
-    tar -xvzf gtk-themes.tar.gz      -C "/usr/share/themes/" >> "$LOG_FILE" 2>&1
-    tar -xvzf debian-settings.tar.gz -C "/home/$username/" >> "$LOG_FILE" 2>&1
-    
+
+    tar -xvzf fonts.tar.gz -C "/usr/local/share/fonts/" >>"$LOG_FILE" 2>&1
+    tar -xvzf icons.tar.gz -C "/usr/share/icons/" >>"$LOG_FILE" 2>&1
+    tar -xvzf wallpaper.tar.gz -C "/usr/share/backgrounds/xfce/" >>"$LOG_FILE" 2>&1
+    tar -xvzf gtk-themes.tar.gz -C "/usr/share/themes/" >>"$LOG_FILE" 2>&1
+    tar -xvzf debian-settings.tar.gz -C "/home/$username/" >>"$LOG_FILE" 2>&1
+
     rm -fr "$temp_folder"
 
     echo -e "${R} [${W}-${R}]${C} Purging Unnecessary Files..${W}"
