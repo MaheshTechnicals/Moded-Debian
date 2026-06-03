@@ -19,16 +19,19 @@ This enhanced version comes with preinstalled developer tools, optimized perform
 
 ✅ **Audio Fixed** – Full sound support in Termux (Proot-Distro)  
 ✅ **Lightweight RootFS** – Requires only ~4 GB storage  
-✅ **Dual Browser Setup** – Chromium + Mozilla Firefox  
+✅ **Triple Browser Setup** – Firefox (default) + Chromium + Brave, all auto-installed  
+✅ **Firefox as Default** – Set system-wide via xdg-settings, update-alternatives & mimeapps  
 ✅ **Bangla Font Support** – Perfect for multilingual users  
 ✅ **Preinstalled Media Players** – VLC & MPV  
-✅ **Code Ready** – Visual Studio Code (arm64/aarch64) & Sublime Text  
+✅ **Code Ready** – Visual Studio Code (arm64/aarch64) & Cursor AI Editor  
 ✅ **User-Friendly Installer** – Designed for beginners  
 ✅ **Beautiful UI** – Modern icons, wallpapers, and system themes  
+✅ **proot-distro v5.x Compatible** – Works with both new OCI and legacy rootfs paths  
 
 ---
 
 ## 📦 Installation Guide
+
 ### 🧩 Step 1 — Install Termux & Termux:API
 
 To get started, you need to install both the **Termux** app and the **Termux:API** add-on.  
@@ -112,10 +115,11 @@ See the full list of updates and improvements here:
 
 - **Base Distro:** Debian (Proot-Distro)
 - **Architecture:** aarch64 / arm64
-- **Display Server:** TightVNC
+- **Display Server:** TigerVNC
 - **Desktop Environment:** XFCE4
 - **Developed For:** Android (Termux)
 - **Minimum Storage Required:** 4 GB free
+- **proot-distro Compatibility:** v4.x (legacy) and v5.x (OCI-based)
 
 ---
 
@@ -131,6 +135,9 @@ Then reconnect via VNC Viewer.
 
 **Q:** Audio not working?  
 **A:** Run `pavucontrol` inside Debian GUI and make sure output device is not muted.
+
+**Q:** Got "Error Installing Distro!" even though Debian downloaded fine?  
+**A:** You are likely on proot-distro v5.x. The setup script auto-detects both old and new rootfs paths. Re-run `bash setup.sh` with the latest version of this repo.
 
 ---
 
@@ -164,13 +171,13 @@ If you like this project, please:
 - 🪄 Fork it and make improvements  
 - 📣 Share it with your friends  
 
-> “Linux isn’t hard — it’s just a new way to explore your Android!”
+> "Linux isn't hard — it's just a new way to explore your Android!"
 
 ---
 
 ### 🔍 SEO Keywords
 
-`debian termux`, `debian android`, `linux on android`, `termux debian setup`, `vnc viewer termux`, `moded debian`, `maheshthechnicals debian`, `debian xfce termux`, `proot distro debian`, `install debian termux gui`, `debian vnc setup android`
+`debian termux`, `debian android`, `linux on android`, `termux debian setup`, `vnc viewer termux`, `moded debian`, `maheshtechnicals debian`, `debian xfce termux`, `proot distro debian`, `install debian termux gui`, `debian vnc setup android`
 
 ---
 

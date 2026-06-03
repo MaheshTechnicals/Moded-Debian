@@ -4,6 +4,44 @@ This project follows [Semantic Versioning](https://semver.org/) and the [Keep a 
 
 ---
 
+## [v1.2.0] - 2026-06-04
+
+### 🐛 Fixed
+- **setup.sh**: Updated rootfs path for proot-distro v5.x (`containers/debian/rootfs`).  
+  Added `get_debian_dir()` helper with automatic legacy path fallback so the script works on both proot-distro v4.x and v5.x without changes.
+- **setup.sh**: Fixed incorrect `exit 1` on success — changed to `exit 0`.
+- **setup.sh**: Replaced `exit 0` inside `distro()` with `return 0` so the function no longer terminates the whole script on an already-installed distro.
+- **distro/vncstop**: Fixed hardcoded `/username/.vnc/` path — replaced with `$HOME/.vnc/` so PID files are actually cleaned up.
+- **distro/user.sh**: Fixed wrong project folder name `modded-ubuntu` → `Moded-Debian` in local `gui.sh` path lookup.
+- **distro/user.sh**: Uncommented and fixed `chmod +x` on the Debian launcher — it was commented out, causing "Permission denied" on first run.
+- **distro/user.sh**: Replaced all hardcoded `/data/data/com.termux/files/usr/bin` paths with `$TERMUX_BIN` variable for portability.
+- **distro/user.sh**: Renamed internal `sudo()` function to `sudo_setup()` — the old name shadowed the system `sudo` command.
+- **distro/gui.sh**: Fixed `sound_fix()` — added idempotency guard so `bash ~/.sound` is only prepended once to the Debian launcher. Previously it would duplicate the line on every re-run of `gui.sh`, corrupting the launcher.
+- **distro/gui.sh**: Fixed `sound_fix()` — added `grep` guards before appending `DISPLAY` and `PULSE_SERVER` to `/etc/profile` so they are never written twice.
+- **distro/gui.sh**: Fixed `sound_fix()` — replaced hardcoded Termux path with `$TERMUX_BIN` variable.
+- **distro/gui.sh**: Fixed `install_firefox()` and `install_brave()` — removed unnecessary `sudo bash`; script already runs as root (enforced by `check_root()`). Using `sudo` inside proot when sudo is not yet configured can cause hangs.
+- **distro/gui.sh**: Fixed `package()` — replaced `type -p` with `dpkg -s` for package presence checks. `type -p` only finds executables in `$PATH` and silently misses non-binary packages such as `xfce4`, `dbus-x11`, `fonts-beng`, `apt-transport-https`, causing them to be reinstalled on every run.
+- **distro/gui.sh**: Fixed `install_apt()` — same `type -p` → `dpkg -s` fix applied for media player installs.
+- **distro/gui.sh**: Fixed `rem_icon()` — replaced `type -p` guard (checks executables) with `[ -d ... ]` directory check for icon folders.
+- **distro/gui.sh**: Fixed `install_chromium()` — removed EOL Debian Buster repository and 5 `apt-key adv` calls. Chromium is now installed directly from Debian Bookworm/Trixie main repos.
+- **distro/gui.sh**: Removed `ubuntu-mono-light` from `rem_icon()` — it is an Ubuntu-specific icon theme that does not exist on Debian.
+- **distro/gui.sh**: Renamed `ubuntu-settings.tar.gz` → `debian-settings.tar.gz` in download URL and tar extraction, matching the updated GitHub release asset.
+- **distro/gui.sh**: Added `$username` safety fallback — if no sudo group user is found at startup (e.g. `gui.sh` run before `user.sh`), falls back to the first entry in `/home/`.
+- **distro/gui.sh**: Moved `downloader()` to the top of the file — it is now defined before all `install_*` functions that depend on it.
+
+### 🚀 Added
+- **distro/gui.sh**: Added `set_default_browser()` — sets Firefox as the system default browser using four methods: `xdg-settings`, `update-alternatives`, `/etc/profile.d/default_browser.sh`, and `~/.config/mimeapps.list` for both root and the sudo user.
+- **distro/gui.sh**: Browsers (Firefox, Chromium, Brave) are now auto-installed silently — no user prompt required. Firefox is set as default automatically after all three are installed.
+
+### 📝 Updated
+- **README.md**: Updated "Dual Browser Setup" → "Triple Browser Setup" (Firefox + Chromium + Brave).
+- **README.md**: Fixed "TightVNC" → "TigerVNC" in Technical Info (the project uses `tigervnc-standalone-server`).
+- **README.md**: Added proot-distro v5.x compatibility note to Key Features and Technical Info.
+- **README.md**: Added troubleshooting entry for proot-distro v5.x "Error Installing Distro" false positive.
+- **CHANGELOG.md**: Added this entry documenting all v1.2.0 changes.
+
+---
+
 ## [v1.1.0] - 2025-10-30
 ### 🚀 Added
 - **remove.sh** script to easily uninstall the Modded Debian environment and clean related configurations.
