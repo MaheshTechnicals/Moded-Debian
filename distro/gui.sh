@@ -316,10 +316,10 @@ EOF
     }
 
     install_python_latest() {
-        run_silent "Updating repository tracking flags for python dependencies" apt-get update -y
-        run_silent "Installing Python core runtime environment modules and safe sandbox setups" apt-get install -y python3 python3-pip python3-venv
-        run_silent "Upgrading base application engine pip systems inside python installations" python3 -m pip install --upgrade pip
-    }
+    run_silent "Updating repository tracking flags for python dependencies" apt-get update -y
+    run_silent "Installing Python core runtime environment modules and safe sandbox setups" apt-get install -y python3 python3-pip python3-venv
+    log_msg "Python environment installed. Note: Use 'python3 -m venv <env_name>' to safely create environments and manage pip."
+}
 
     if [[ ${LANG_OPTION} == 1 ]]; then
         install_node_latest
