@@ -8,9 +8,12 @@ C="$(printf '\033[1;36m')"
 arch=$(uname -m)
 username=$(getent group sudo | awk -F ':' '{print $4}' | cut -d ',' -f1)
 
+# Use $PREFIX for portability instead of hardcoded Termux path
+TERMUX_BIN="${PREFIX:-/data/data/com.termux/files/usr}/bin"
+
 check_root(){
 	if [ "$(id -u)" -ne 0 ]; then
-		echo -ne " ${R}Run this program as root!\n\n"${W}
+		echo -ne " ${R}Run this program as root!\n\n${W}"
 		exit 1
 	fi
 }
@@ -44,11 +47,9 @@ ${W}
 	echo -e "${G}💻 Debian GUI Setup Script by Mahesh Technicals\n${W}"
 }
 
-
-
 note() {
 	banner
-	echo -e " ${G} [-] Successfully Installed !\n"${W}
+	echo -e " ${G} [-] Successfully Installed !\n${W}"
 	sleep 1
 	cat <<- EOF
 		 ${G}[-] Type ${C}vncstart${G} to run Vncserver.
@@ -70,15 +71,15 @@ note() {
 
 package() {
 	banner
-	echo -e "${R} [${W}-${R}]${C} Checking required packages..."${W}
+	echo -e "${R} [${W}-${R}]${C} Checking required packages...${W}"
 	apt-get update -y
 	apt install udisks2 -y
 	rm /var/lib/dpkg/info/udisks2.postinst
 	echo "" > /var/lib/dpkg/info/udisks2.postinst
 	dpkg --configure -a
 	apt-mark hold udisks2
-	
-    # These packages are all available in Debian
+
+	# These packages are all available in Debian
 	packs=(sudo gnupg2 curl nano git xz-utils at-spi2-core xfce4 xfce4-goodies xfce4-terminal librsvg2-common menu inetutils-tools dialog exo-utils tigervnc-standalone-server tigervnc-common tigervnc-tools dbus-x11 fonts-beng fonts-beng-extra gtk2-engines-murrine gtk2-engines-pixbuf apt-transport-https gh)
 	for hulu in "${packs[@]}"; do
 		type -p "$hulu" &>/dev/null || {
@@ -86,7 +87,7 @@ package() {
 			apt-get install "$hulu" -y --no-install-recommends
 		}
 	done
-	
+
 	apt-get update -y
 	apt-get upgrade -y
 }
@@ -100,30 +101,25 @@ install_apt() {
 	done
 }
 
-# ---- Updated install_vscode: use external code.sh installer ----
 install_vscode() {
     [[ $(command -v code) ]] && echo "${Y}VSCode is already Installed!${W}" || {
         echo -e "${G}Installing ${Y}VSCode via external installer${W}"
-        # Install binutils required by the VSCode installer script
         echo -e "${G}Installing ${Y}binutils${G} (required for VSCode installer)${W}"
         apt-get install -y binutils
-        # download the installer script as /tmp/code.sh and run with -i
         downloader "/tmp/code.sh" "https://raw.githubusercontent.com/MaheshTechnicals/Kali-Nethunter/refs/heads/main/vscode"
         chmod +x /tmp/code.sh
         bash /tmp/code.sh -i
         echo -e "${C} Visual Studio Code Installed Successfully\n${W}"
     }
 }
-# -----------------------------------------------------------------
 
 install_sublime() {
-    # This method is distro-agnostic and works fine on Debian
 	[[ $(command -v subl) ]] && echo "${Y}Sublime is already Installed!${W}" || {
 		apt install gnupg2 software-properties-common --no-install-recommends -y
 		echo "deb https://download.sublimetext.com/ apt/stable/" | tee /etc/apt/sources.list.d/sublime-text.list
 		curl -fsSL https://download.sublimetext.com/sublimehq-pub.gpg | gpg --dearmor > /etc/apt/trusted.gpg.d/sublime.gpg 2> /dev/null
 		apt update -y
-		apt install sublime-text -y 
+		apt install sublime-text -y
 		echo -e "${C} Sublime Text Editor Installed Successfully\n${W}"
 	}
 }
@@ -146,30 +142,23 @@ EOF
 }
 
 install_chromium() {
-    # This logic already used Debian repos, so it's perfect
-	[[ $(command -v chromium) ]] && echo "${Y}Chromium is already Installed!${W}\n" || {
+	# FIX: Debian Buster is EOL. Chromium is available directly in Debian Bookworm/Trixie main repos.
+	# No need for extra sources — just install it directly.
+	[[ $(command -v chromium) ]] && echo "${Y}Chromium is already Installed!${W}" || {
 		echo -e "${G}Installing ${Y}Chromium${W}"
-		apt purge chromium* chromium-browser* snapd -y
-		apt install gnupg2 software-properties-common --no-install-recommends -y
-		echo -e "deb http://ftp.debian.org/debian buster main\ndeb http://ftp.debian.org/debian buster-updates main" >> /etc/apt/sources.list
-		apt-key adv --keyserver keyserver.ubuntu.com --recv-keys DCC9EFBF77E11517
-		apt-key adv --keyserver keyserver.ubuntu.com --recv-keys 648ACFD622F3D138
-		apt-key adv --keyserver keyserver.ubuntu.com --recv-keys AA8E81B4331F7F50
-		apt-key adv --keyserver keyserver.ubuntu.com --recv-keys 112695A0E562B32A
-		apt-key adv --keyserver keyserver.ubuntu.com --recv-keys 3B4FE6ACC0B21F32
-		apt update -y
-		apt install chromium -y
-		sed -i 's/chromium %U/chromium --no-sandbox %U/g' /usr/share/applications/chromium.desktop
-		# Comment out buster lines so they don't break future apt update
-		sed -i '/buster/s/^/#/' /etc/apt/sources.list
+		apt-get update -y
+		apt-get install -y chromium
+		# Apply --no-sandbox flag for proot environment
+		if [ -f /usr/share/applications/chromium.desktop ]; then
+			sed -i 's/chromium %U/chromium --no-sandbox %U/g' /usr/share/applications/chromium.desktop
+		fi
 		echo -e "${G} Chromium Installed Successfully\n${W}"
 	}
 }
 
 install_firefox() {
-	[[ $(command -v firefox) ]] && echo "${Y}Firefox is already Installed!${W}\n" || {
+	[[ $(command -v firefox) ]] && echo "${Y}Firefox is already Installed!${W}" || {
 		echo -e "${G}Installing ${Y}Firefox${W}"
-		# Download firefox.sh first so sudo bash can reference a real file path
 		downloader "/tmp/firefox.sh" "https://raw.githubusercontent.com/MaheshTechnicals/Moded-Debian/refs/heads/main/distro/firefox.sh"
 		chmod +x /tmp/firefox.sh
 		sudo bash /tmp/firefox.sh
@@ -178,7 +167,7 @@ install_firefox() {
 }
 
 install_brave() {
-	[[ $(command -v brave-browser) ]] && echo "${Y}Brave is already Installed!${W}\n" || {
+	[[ $(command -v brave-browser) ]] && echo "${Y}Brave is already Installed!${W}" || {
 		echo -e "${G}Installing ${Y}Brave${W}"
 		downloader "/tmp/brave.sh" "https://raw.githubusercontent.com/MaheshTechnicals/Moded-Debian/refs/heads/main/distro/brave.sh"
 		chmod +x /tmp/brave.sh
@@ -264,7 +253,7 @@ install_softwares() {
 		read -n1 -p "${R} [${G}~${R}]${Y} Select an Option: ${G}" IDE_OPTION
 		banner
 	}
-	
+
 	cat <<- EOF
 		${Y} ---${G} Media Player ${Y}---
 
@@ -315,7 +304,6 @@ install_softwares() {
 	fi
 
 	install_languages
-
 }
 
 downloader(){
@@ -328,28 +316,27 @@ downloader(){
 }
 
 sound_fix() {
-    # Changed to Debian
-	echo "$(echo "bash ~/.sound" | cat - /data/data/com.termux/files/usr/bin/debian)" > /data/data/com.termux/files/usr/bin/debian
-	echo "export DISPLAY=":1"" >> /etc/profile
-	echo "export PULSE_SERVER=127.0.0.1" >> /etc/profile 
+	# FIX: use $TERMUX_BIN variable instead of hardcoded absolute path
+	echo "$(echo "bash ~/.sound" | cat - "$TERMUX_BIN/debian")" > "$TERMUX_BIN/debian"
+	echo "export DISPLAY=\":1\"" >> /etc/profile
+	echo "export PULSE_SERVER=127.0.0.1" >> /etc/profile
 	source /etc/profile
 }
 
 rem_theme() {
 	theme=(Bright Daloa Emacs Moheli Retro Smoke)
 	for rmi in "${theme[@]}"; do
-		type -p "$rmi" &>/dev/null || {
-			rm -rf /usr/share/themes/"$rmi"
-		}
+		# Use directory check, not command check, for theme folders
+		[ -d "/usr/share/themes/$rmi" ] && rm -rf "/usr/share/themes/$rmi"
 	done
 }
 
 rem_icon() {
-	fonts=(hicolor LoginIcons ubuntu-mono-light)
-	for rmf in "${fonts[@]}"; do
-		type -p "$rmf" &>/dev/null || {
-			rm -rf /usr/share/icons/"$rmf"
-		}
+	# FIX: use directory existence check instead of type -p (which checks commands, not folders)
+	# FIX: removed ubuntu-mono-light — it's Ubuntu-specific and won't exist on Debian
+	icons=(LoginIcons)
+	for rmf in "${icons[@]}"; do
+		[ -d "/usr/share/icons/$rmf" ] && rm -rf "/usr/share/icons/$rmf"
 	done
 }
 
@@ -364,16 +351,13 @@ EOF
 }
 # ---------------------------------------------------
 
-# ---- New: create a permanent alias 'l' => 'ls' system-wide ----
 add_alias_l() {
-    # Create profile.d file for login shells
     cat > /etc/profile.d/alias_l.sh <<'EOF'
 # alias l for ls
 alias l='ls'
 EOF
     chmod 644 /etc/profile.d/alias_l.sh
 
-    # Ensure interactive non-login shells also get the alias (bash)
     if [ -f /etc/bash.bashrc ]; then
         grep -qxF "alias l='ls'" /etc/bash.bashrc || echo "alias l='ls'" >> /etc/bash.bashrc
     fi
@@ -394,7 +378,6 @@ EOF
 
 	echo -e "${G}Alias 'cl' -> 'clear' installed system-wide.${W}"
 }
-# ---------------------------------------------------------------
 
 config() {
 	banner
@@ -403,46 +386,43 @@ config() {
 	# auto-clear terminal on login
 	add_clear_on_login
 
-	# install alias
+	# install aliases
 	add_alias_l
 	add_alias_cl
 
-	apt-key adv --keyserver keyserver.ubuntu.com --recv-keys 3B4FE6ACC0B21F32
 	yes | apt upgrade
 	yes | apt install gtk2-engines-murrine gtk2-engines-pixbuf sassc optipng inkscape libglib2.0-dev-bin
-	mv -vf /usr/share/backgrounds/xfce/xfce-verticals.png /usr/share/backgrounds/xfce/xfceverticals-old.png
+	mv -vf /usr/share/backgrounds/xfce/xfce-verticals.png /usr/share/backgrounds/xfce/xfce-verticals-old.png
 	temp_folder=$(mktemp -d -p "$HOME")
 	{ banner; sleep 1; cd $temp_folder; }
 
-	echo -e "${R} [${W}-${R}]${C} Downloading Required Files..\n"${W}
-    # These URLs still point to modded-ubuntu. See note below.
-	downloader "fonts.tar.gz" "https://github.com/MaheshTechnicals/Moded-Debian/releases/download/config/fonts.tar.gz"
-	downloader "icons.tar.gz" "https://github.com/MaheshTechnicals/Moded-Debian/releases/download/config/icons.tar.gz"
-	downloader "wallpaper.tar.gz" "https://github.com/MaheshTechnicals/Moded-Debian/releases/download/config/wallpaper.tar.gz"
-	downloader "gtk-themes.tar.gz" "https://github.com/MaheshTechnicals/Moded-Debian/releases/download/config/gtk-themes.tar.gz"
+	echo -e "${R} [${W}-${R}]${C} Downloading Required Files..\n${W}"
+	downloader "fonts.tar.gz"         "https://github.com/MaheshTechnicals/Moded-Debian/releases/download/config/fonts.tar.gz"
+	downloader "icons.tar.gz"         "https://github.com/MaheshTechnicals/Moded-Debian/releases/download/config/icons.tar.gz"
+	downloader "wallpaper.tar.gz"     "https://github.com/MaheshTechnicals/Moded-Debian/releases/download/config/wallpaper.tar.gz"
+	downloader "gtk-themes.tar.gz"    "https://github.com/MaheshTechnicals/Moded-Debian/releases/download/config/gtk-themes.tar.gz"
 	downloader "ubuntu-settings.tar.gz" "https://github.com/MaheshTechnicals/Moded-Debian/releases/download/config/ubuntu-settings.tar.gz"
 
-	echo -e "${R} [${W}-${R}]${C} Unpacking Files..\n"${W}
-	tar -xvzf fonts.tar.gz -C "/usr/local/share/fonts/"
-	tar -xvzf icons.tar.gz -C "/usr/share/icons/"
-	tar -xvzf wallpaper.tar.gz -C "/usr/share/backgrounds/xfce/"
-	tar -xvzf gtk-themes.tar.gz -C "/usr/share/themes/"
-	tar -xvzf ubuntu-settings.tar.gz -C "/home/$username/"	
+	echo -e "${R} [${W}-${R}]${C} Unpacking Files..\n${W}"
+	tar -xvzf fonts.tar.gz         -C "/usr/local/share/fonts/"
+	tar -xvzf icons.tar.gz         -C "/usr/share/icons/"
+	tar -xvzf wallpaper.tar.gz     -C "/usr/share/backgrounds/xfce/"
+	tar -xvzf gtk-themes.tar.gz    -C "/usr/share/themes/"
+	tar -xvzf ubuntu-settings.tar.gz -C "/home/$username/"
 	rm -fr $temp_folder
 
-	echo -e "${R} [${W}-${R}]${C} Purging Unnecessary Files.."${W}
+	echo -e "${R} [${W}-${R}]${C} Purging Unnecessary Files..${W}"
 	rem_theme
 	rem_icon
 
-	echo -e "${R} [${W}-${R}]${C} Rebuilding Font Cache..\n"${W}
+	echo -e "${R} [${W}-${R}]${C} Rebuilding Font Cache..\n${W}"
 	fc-cache -fv
 
-	echo -e "${R} [${W}-${R}]${C} Upgrading the System..\n"${W}
+	echo -e "${R} [${W}-${R}]${C} Upgrading the System..\n${W}"
 	apt update
 	yes | apt upgrade
 	apt clean
 	yes | apt autoremove
-
 }
 
 # ----------------------------
