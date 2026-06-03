@@ -176,6 +176,45 @@ install_brave() {
 	}
 }
 
+set_default_browser() {
+	echo -e "\n${R} [${W}-${R}]${C} Setting Firefox as default browser...${W}"
+
+	# Set via xdg-settings (XFCE respects this)
+	if command -v xdg-settings >/dev/null 2>&1; then
+		xdg-settings set default-web-browser firefox.desktop 2>/dev/null && \
+			echo -e "${G} xdg-settings: Firefox set as default.${W}"
+	fi
+
+	# Set via update-alternatives (system-wide fallback)
+	if command -v update-alternatives >/dev/null 2>&1; then
+		update-alternatives --set x-www-browser "$(command -v firefox)" 2>/dev/null && \
+			echo -e "${G} update-alternatives: Firefox set as default.${W}"
+	fi
+
+	# Set BROWSER env variable system-wide via profile.d
+	cat > /etc/profile.d/default_browser.sh <<'EOF'
+export BROWSER=firefox
+EOF
+	chmod 644 /etc/profile.d/default_browser.sh
+
+	# Set xdg mimeapps for the root user and the sudo user
+	for homedir in /root "/home/$username"; do
+		[ -d "$homedir" ] || continue
+		mkdir -p "$homedir/.config"
+		cat > "$homedir/.config/mimeapps.list" <<'EOF'
+[Default Applications]
+text/html=firefox.desktop
+x-scheme-handler/http=firefox.desktop
+x-scheme-handler/https=firefox.desktop
+x-scheme-handler/about=firefox.desktop
+x-scheme-handler/unknown=firefox.desktop
+EOF
+		echo -e "${G} mimeapps.list set for $homedir${W}"
+	done
+
+	echo -e "${G} Firefox is now the default browser.\n${W}"
+}
+
 install_languages() {
 	banner
 	cat <<- EOF
@@ -228,19 +267,18 @@ install_languages() {
 
 install_softwares() {
 	banner
-	cat <<- EOF
-		${Y} ---${G} Select Browser ${Y}---
 
-		${C} [${W}1${C}] Firefox (Default)
-		${C} [${W}2${C}] Chromium
-		${C} [${W}3${C}] Brave
-		${C} [${W}4${C}] All (Firefox + Chromium + Brave)
+	# ── Browsers: auto-install all three, no prompt ──────────────────
+	echo -e "${R} [${W}-${R}]${C} Installing Browsers...${W}"
+	install_firefox
+	install_chromium
+	install_brave
+	# Set Firefox as the default browser after all are installed
+	set_default_browser
 
-	EOF
-	read -n1 -p "${R} [${G}~${R}]${Y} Select an Option: ${G}" BROWSER_OPTION
-	banner
-
+	# ── IDE: ask user ─────────────────────────────────────────────────
 	[[ ("$arch" != 'armhf') || ("$arch" != *'armv7'*) ]] && {
+		banner
 		cat <<- EOF
 			${Y} ---${G} Select IDE ${Y}---
 
@@ -252,33 +290,7 @@ install_softwares() {
 		EOF
 		read -n1 -p "${R} [${G}~${R}]${Y} Select an Option: ${G}" IDE_OPTION
 		banner
-	}
 
-	cat <<- EOF
-		${Y} ---${G} Media Player ${Y}---
-
-		${C} [${W}1${C}] MPV Media Player (Recommended)
-		${C} [${W}2${C}] VLC Media Player
-		${C} [${W}3${C}] All (MPV + VLC)
-		${C} [${W}4${C}] Skip! (Default)
-
-	EOF
-	read -n1 -p "${R} [${G}~${R}]${Y} Select an Option: ${G}" PLAYER_OPTION
-	{ banner; sleep 1; }
-
-	if [[ ${BROWSER_OPTION} == 2 ]]; then
-		install_chromium
-	elif [[ ${BROWSER_OPTION} == 3 ]]; then
-		install_brave
-	elif [[ ${BROWSER_OPTION} == 4 ]]; then
-		install_firefox
-		install_chromium
-		install_brave
-	else
-		install_firefox
-	fi
-
-	[[ ("$arch" != 'armhf') || ("$arch" != *'armv7'*) ]] && {
 		if [[ ${IDE_OPTION} == 1 ]]; then
 			install_cursor
 		elif [[ ${IDE_OPTION} == 2 ]]; then
@@ -291,6 +303,20 @@ install_softwares() {
 			sleep 1
 		fi
 	}
+
+	# ── Media Player: ask user ────────────────────────────────────────
+	banner
+	cat <<- EOF
+		${Y} ---${G} Media Player ${Y}---
+
+		${C} [${W}1${C}] MPV Media Player (Recommended)
+		${C} [${W}2${C}] VLC Media Player
+		${C} [${W}3${C}] All (MPV + VLC)
+		${C} [${W}4${C}] Skip! (Default)
+
+	EOF
+	read -n1 -p "${R} [${G}~${R}]${Y} Select an Option: ${G}" PLAYER_OPTION
+	{ banner; sleep 1; }
 
 	if [[ ${PLAYER_OPTION} == 1 ]]; then
 		install_apt "mpv"
