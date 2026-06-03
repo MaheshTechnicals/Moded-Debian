@@ -192,13 +192,37 @@ install_brave() {
         bash /tmp/brave.sh
         echo -e "${G} Brave Installed Successfully\n${W}"
     }
+
+    # FIX: Create XFCE helper file for Brave so it appears in
+    # XFCE Default Applications dialog (exo-preferred-applications).
+    # XFCE only lists browsers that have a helper entry under
+    # /usr/share/xfce4/helpers/ — Brave ships without one.
+    mkdir -p /usr/share/xfce4/helpers
+    if [ ! -f /usr/share/xfce4/helpers/brave-browser.desktop ]; then
+        cat > /usr/share/xfce4/helpers/brave-browser.desktop <<'EOF'
+[Desktop Entry]
+Version=1.0
+Type=X-XFCE-Helper
+X-XFCE-Category=WebBrowser
+X-XFCE-CommandsWithParameter=brave-browser --no-sandbox "%s"
+Icon=brave-browser
+Name=Brave Web Browser
+X-XFCE-Commands=brave-browser --no-sandbox
+EOF
+        echo -e "${G} XFCE helper registered for Brave.${W}"
+    fi
+
+    # Refresh desktop database so XFCE picks up the new entries
+    command -v update-desktop-database >/dev/null 2>&1 && \
+        update-desktop-database /usr/share/applications 2>/dev/null && \
+        echo -e "${G} Desktop database updated for Brave.${W}"
 }
 
 set_default_browser() {
     echo -e "\n${R} [${W}-${R}]${C} Setting Firefox as default browser...${W}"
 
-    # Set via xdg-settings (XFCE respects this)
-    if command -v xdg-settings >/dev/null 2>&1; then
+    # Set via xdg-settings — only works inside a live X session; skip silently if $DISPLAY is unset
+    if command -v xdg-settings >/dev/null 2>&1 && [ -n "${DISPLAY:-}" ]; then
         xdg-settings set default-web-browser firefox.desktop 2>/dev/null && \
             echo -e "${G} xdg-settings: Firefox set as default.${W}"
     fi
@@ -215,10 +239,15 @@ export BROWSER=firefox
 EOF
     chmod 644 /etc/profile.d/default_browser.sh
 
-    # Set xdg mimeapps for root and the sudo user
+    # Set xdg mimeapps AND XFCE helpers.rc for root and the sudo user.
+    # helpers.rc is what XFCE's Default Applications dialog (exo-preferred-applications)
+    # actually reads to determine the selected browser — mimeapps.list alone is NOT enough.
     for homedir in /root "/home/$username"; do
         [ -d "$homedir" ] || continue
+        mkdir -p "$homedir/.config/xfce4"
         mkdir -p "$homedir/.config"
+
+        # mimeapps.list — used by xdg-open and other XDG-aware apps
         cat > "$homedir/.config/mimeapps.list" <<'EOF'
 [Default Applications]
 text/html=firefox.desktop
@@ -228,6 +257,21 @@ x-scheme-handler/about=firefox.desktop
 x-scheme-handler/unknown=firefox.desktop
 EOF
         echo -e "${G} mimeapps.list set for $homedir${W}"
+
+        # FIX: helpers.rc — this is what XFCE Default Applications dialog reads.
+        # Without this entry the dialog always shows "Debian Sensible Browser"
+        # regardless of what mimeapps.list says.
+        if [ -f "$homedir/.config/xfce4/helpers.rc" ]; then
+            # Update existing entry if present, otherwise append
+            if grep -q "^WebBrowser=" "$homedir/.config/xfce4/helpers.rc"; then
+                sed -i 's/^WebBrowser=.*/WebBrowser=firefox/' "$homedir/.config/xfce4/helpers.rc"
+            else
+                echo "WebBrowser=firefox" >> "$homedir/.config/xfce4/helpers.rc"
+            fi
+        else
+            echo "WebBrowser=firefox" > "$homedir/.config/xfce4/helpers.rc"
+        fi
+        echo -e "${G} helpers.rc set for $homedir${W}"
     done
 
     echo -e "${G} Firefox is now the default browser.\n${W}"
