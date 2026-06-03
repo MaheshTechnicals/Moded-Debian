@@ -1,5 +1,41 @@
 #!/bin/bash
 
+# ─────────────────────────────────────────────
+# 📋 LOGGING INITIALIZATION
+# ─────────────────────────────────────────────
+LOG_FILE="/var/log/debian_setup.log"
+
+# Create a clean log file or empty existing one
+touch "$LOG_FILE" 2>/dev/null || LOG_FILE="/tmp/debian_setup.log"
+echo "=== Setup Log Started At $(date) ===" > "$LOG_FILE"
+
+# Helper function to write messages cleanly to the log file
+log_msg() {
+    echo "[$(date '+%Y-%m-%d %H:%M:%S')] $1" >> "$LOG_FILE"
+}
+
+# Redirect all background installation processes to log without cluttering screen
+# Usage: run_silent "Task Description" command args...
+run_silent() {
+    local task_name="$1"
+    shift
+    log_msg "STARTING: $task_name"
+    echo -e "${C}Running: ${Y}$task_name...${W}"
+    
+    # Execute the command, appending stdout and stderr directly to the log file
+    if "$@" >> "$LOG_FILE" 2>&1; then
+        log_msg "SUCCESS: $task_name"
+        echo -e "${G}✓ $task_name completed successfully.${W}"
+    else
+        log_msg "ERROR: $task_name failed with exit code $?"
+        echo -e "${R}✗ ERROR in: $task_name (Check $LOG_FILE for details)${W}"
+        sleep 2 # Let the user see that a specific block threw an error
+    fi
+}
+
+# ─────────────────────────────────────────────
+# VARIABLES & STYLES
+# ─────────────────────────────────────────────
 R="$(printf '\033[1;31m')"
 G="$(printf '\033[1;32m')"
 Y="$(printf '\033[1;33m')"
@@ -17,13 +53,14 @@ if [[ -z "$username" ]]; then
 fi
 
 # ─────────────────────────────────────────────
-# HELPER: downloader — defined first so all install_* functions can use it
+# HELPER: downloader
 # ─────────────────────────────────────────────
 downloader() {
     path="$1"
     [[ -e "$path" ]] && rm -rf "$path"
-    echo "Downloading $(basename "$1")..."
-    curl --progress-bar --insecure --fail \
+    log_msg "Downloading $2 to $path"
+    # Added --silent but kept --show-error so failures print to the log
+    curl --silent --show-error --insecure --fail \
          --retry-connrefused --retry 3 --retry-delay 2 \
          --location --output "${path}" "$2"
 }
@@ -31,6 +68,7 @@ downloader() {
 check_root() {
     if [ "$(id -u)" -ne 0 ]; then
         echo -ne " ${R}Run this program as root!\n\n${W}"
+        log_msg "CRITICAL: Script stopped. Script was not run as root user."
         exit 1
     fi
 }
@@ -41,12 +79,14 @@ fix_machineid() {
     if [ ! -s /etc/machine-id ]; then
         echo -e "${Y}Machine-id missing or empty. Generating new one...${W}"
         rm -f /var/lib/dbus/machine-id /etc/machine-id
-        dbus-uuidgen --ensure=/etc/machine-id
-        dbus-uuidgen --ensure
+        dbus-uuidgen --ensure=/etc/machine-id >> "$LOG_FILE" 2>&1
+        dbus-uuidgen --ensure >> "$LOG_FILE" 2>&1
         ln -sf /etc/machine-id /var/lib/dbus/machine-id
         echo -e "${G}Machine-id successfully created.${W}"
+        log_msg "Machine-id was missing; new one generated successfully."
     else
         echo -e "${G}Machine-id already exists.${W}"
+        log_msg "Machine-id verification skipped: file already valid."
     fi
 }
 
@@ -59,13 +99,14 @@ ${G}  / / / / __/ / __  |/ // /| | /  |/ /
 ${C} / /_/ / /___/ /_/ // // ___ |/ /|  /  
 ${Y}/_____/_____/_____/___/_/  |_/_/ |_/   
 ${W}
-    EOF
+EOF
     echo -e "${G}💻 Debian GUI Setup Script by Mahesh Technicals\n${W}"
 }
 
 note() {
     banner
     echo -e " ${G} [-] Successfully Installed !\n${W}"
+    echo -e " ${Y} [*] You can check all execution logs at: $LOG_FILE\n${W}"
     sleep 1
     cat <<- EOF
          ${G}[-] Type ${C}vncstart${G} to run Vncserver.
@@ -82,121 +123,109 @@ note() {
          ${C}Click on Connect & Input the Password.
 
          ${C}Enjoy :D${W}
-    EOF
+EOF
+    log_msg "=== Setup Completed Successfully ==="
 }
 
 package() {
     banner
     echo -e "${R} [${W}-${R}]${C} Checking required packages...${W}"
-    apt-get update -y
-    apt install udisks2 -y
+    
+    run_silent "Updating apt repositories" apt-get update -y
+    run_silent "Installing udisks2 package" apt install udisks2 -y
+    
     rm -f /var/lib/dpkg/info/udisks2.postinst
     echo "" > /var/lib/dpkg/info/udisks2.postinst
-    dpkg --configure -a
-    apt-mark hold udisks2
+    
+    run_silent "Configuring DPKG" dpkg --configure -a
+    run_silent "Holding udisks2 package package changes" apt-mark hold udisks2
 
-    # FIX: use dpkg -s instead of type -p — correctly detects non-binary packages
-    # (fonts, libs, meta-packages like xfce4, dbus-x11 have no standalone binary in PATH)
     packs=(sudo gnupg2 curl nano git xz-utils at-spi2-core xfce4 xfce4-goodies xfce4-terminal librsvg2-common menu inetutils-tools dialog exo-utils tigervnc-standalone-server tigervnc-common tigervnc-tools dbus-x11 fonts-beng fonts-beng-extra gtk2-engines-murrine gtk2-engines-pixbuf apt-transport-https gh)
+    
     for hulu in "${packs[@]}"; do
-        dpkg -s "$hulu" &>/dev/null || {
-            echo -e "\n${R} [${W}-${R}]${G} Installing package : ${Y}$hulu${W}"
-            apt-get install "$hulu" -y --no-install-recommends
-        }
+        if ! dpkg -s "$hulu" &>/dev/null; then
+            run_silent "Installing environment dependency: $hulu" apt-get install "$hulu" -y --no-install-recommends
+        fi
     done
 
-    apt-get update -y
-    apt-get upgrade -y
+    run_silent "System repository update" apt-get update -y
+    run_silent "System core package upgrade" apt-get upgrade -y
 }
 
 install_apt() {
     for pkg in "$@"; do
-        dpkg -s "$pkg" &>/dev/null && echo "${Y}${pkg} is already Installed!${W}" || {
-            echo -e "${G}Installing ${Y}${pkg}${W}"
-            apt install -y "${pkg}"
-        }
+        if dpkg -s "$pkg" &>/dev/null; then
+            echo "${Y}${pkg} is already Installed!${W}"
+            log_msg "Apt Installer: $pkg is already matching on system."
+        else
+            run_silent "Apt tracking package manual installation: $pkg" apt install -y "${pkg}"
+        fi
     done
 }
 
 install_vscode() {
     [[ $(command -v code) ]] && echo "${Y}VSCode is already Installed!${W}" || {
-        echo -e "${G}Installing ${Y}VSCode via external installer${W}"
-        echo -e "${G}Installing ${Y}binutils${G} (required for VSCode installer)${W}"
-        apt-get install -y binutils
-        downloader "/tmp/code.sh" "https://raw.githubusercontent.com/MaheshTechnicals/Kali-Nethunter/refs/heads/main/vscode"
+        run_silent "Installing VSCode binutils requirements" apt-get install -y binutils
+        run_silent "Downloading VSCode setup deployment file" downloader "/tmp/code.sh" "https://raw.githubusercontent.com/MaheshTechnicals/Kali-Nethunter/refs/heads/main/vscode"
         chmod +x /tmp/code.sh
-        bash /tmp/code.sh -i
-        echo -e "${C} Visual Studio Code Installed Successfully\n${W}"
+        run_silent "Executing VSCode external installation binary script" bash /tmp/code.sh -i
     }
 }
 
 install_sublime() {
     [[ $(command -v subl) ]] && echo "${Y}Sublime is already Installed!${W}" || {
-        apt install gnupg2 software-properties-common --no-install-recommends -y
-        echo "deb https://download.sublimetext.com/ apt/stable/" | tee /etc/apt/sources.list.d/sublime-text.list
-        curl -fsSL https://download.sublimetext.com/sublimehq-pub.gpg | gpg --dearmor > /etc/apt/trusted.gpg.d/sublime.gpg 2>/dev/null
-        apt update -y
-        apt install sublime-text -y
-        echo -e "${C} Sublime Text Editor Installed Successfully\n${W}"
+        run_silent "Installing common environment dependencies for Sublime" apt install gnupg2 software-properties-common --no-install-recommends -y
+        echo "deb https://download.sublimetext.com/ apt/stable/" | tee /etc/apt/sources.list.d/sublime-text.list >> "$LOG_FILE" 2>&1
+        curl -fsSL https://download.sublimetext.com/sublimehq-pub.gpg | gpg --dearmor > /etc/apt/trusted.gpg.d/sublime.gpg 2>> "$LOG_FILE"
+        run_silent "Updating source indexes for Sublime repository structural layout" apt update -y
+        run_silent "Installing custom build Sublime Text editor binary" apt install sublime-text -y
     }
 }
 
 install_cursor() {
     [[ $(command -v cursor) ]] && echo "${Y}Cursor is already Installed!${W}" || {
-        echo -e "${G}Installing ${Y}Cursor${W}"
-        downloader "/tmp/cursor.sh" "https://raw.githubusercontent.com/MaheshTechnicals/cursor-free-vip-termux/refs/heads/main/cursor.sh"
+        run_silent "Downloading Cursor setup installer script files" downloader "/tmp/cursor.sh" "https://raw.githubusercontent.com/MaheshTechnicals/cursor-free-vip-termux/refs/heads/main/cursor.sh"
         chmod +x /tmp/cursor.sh
-        apt-get install -y expect
-        expect <<'EOF'
+        run_silent "Installing automated expect engine tracking package" apt-get install -y expect
+        
+        log_msg "Spawning interactive expect shell container sequence for Cursor configuration"
+        expect <<EOF >> "$LOG_FILE" 2>&1
 set timeout -1
 spawn sudo bash /tmp/cursor.sh -i
 expect "Do you want to return to the main menu? (y/n):"
 send "\r"
 expect eof
 EOF
-        echo -e "${C} Cursor Editor Installed Successfully\n${W}"
+        log_msg "Expect terminal interface engine processing closed safely."
     }
 }
 
 install_chromium() {
-    # Chromium is in Debian Bookworm/Trixie main repos — no extra sources needed
     dpkg -s chromium &>/dev/null && echo "${Y}Chromium is already Installed!${W}" || {
-        echo -e "${G}Installing ${Y}Chromium${W}"
-        apt-get update -y
-        apt-get install -y chromium
-        # Apply --no-sandbox flag for proot environment
+        run_silent "Updating repository references for Chromium setup" apt-get update -y
+        run_silent "Installing standard secure distribution build of Chromium" apt-get install -y chromium
         if [ -f /usr/share/applications/chromium.desktop ]; then
             sed -i 's/chromium %U/chromium --no-sandbox %U/g' /usr/share/applications/chromium.desktop
+            log_msg "Applied container safety bypass flag (--no-sandbox) natively inside chromium launcher profiles."
         fi
-        echo -e "${G} Chromium Installed Successfully\n${W}"
     }
 }
 
 install_firefox() {
     [[ $(command -v firefox) ]] && echo "${Y}Firefox is already Installed!${W}" || {
-        echo -e "${G}Installing ${Y}Firefox${W}"
-        downloader "/tmp/firefox.sh" "https://raw.githubusercontent.com/MaheshTechnicals/Moded-Debian/refs/heads/main/distro/firefox.sh"
+        run_silent "Downloading safe native engine tracking files for Firefox deployment" downloader "/tmp/firefox.sh" "https://raw.githubusercontent.com/MaheshTechnicals/Moded-Debian/refs/heads/main/distro/firefox.sh"
         chmod +x /tmp/firefox.sh
-        # FIX: already running as root (check_root guarantees it) — no sudo needed
-        bash /tmp/firefox.sh
-        echo -e "${G} Firefox Installed Successfully\n${W}"
+        run_silent "Executing custom helper automation for Mozilla components" bash /tmp/firefox.sh
     }
 }
 
 install_brave() {
     [[ $(command -v brave-browser) ]] && echo "${Y}Brave is already Installed!${W}" || {
-        echo -e "${G}Installing ${Y}Brave${W}"
-        downloader "/tmp/brave.sh" "https://raw.githubusercontent.com/MaheshTechnicals/Moded-Debian/refs/heads/main/distro/brave.sh"
+        run_silent "Downloading Brave configuration engine assets" downloader "/tmp/brave.sh" "https://raw.githubusercontent.com/MaheshTechnicals/Moded-Debian/refs/heads/main/distro/brave.sh"
         chmod +x /tmp/brave.sh
-        # FIX: already running as root (check_root guarantees it) — no sudo needed
-        bash /tmp/brave.sh
-        echo -e "${G} Brave Installed Successfully\n${W}"
+        run_silent "Executing third-party layout setup configuration scripts for Brave" bash /tmp/brave.sh
     }
 
-    # FIX: Create XFCE helper file for Brave so it appears in
-    # XFCE Default Applications dialog (exo-preferred-applications).
-    # XFCE only lists browsers that have a helper entry under
-    # /usr/share/xfce4/helpers/ — Brave ships without one.
     mkdir -p /usr/share/xfce4/helpers
     if [ ! -f /usr/share/xfce4/helpers/brave-browser.desktop ]; then
         cat > /usr/share/xfce4/helpers/brave-browser.desktop <<'EOF'
@@ -209,45 +238,38 @@ Icon=brave-browser
 Name=Brave Web Browser
 X-XFCE-Commands=brave-browser --no-sandbox
 EOF
-        echo -e "${G} XFCE helper registered for Brave.${W}"
+        log_msg "Registered XFCE application fallback desktop structures explicitly for Brave Web Browser."
     fi
 
-    # Refresh desktop database so XFCE picks up the new entries
     command -v update-desktop-database >/dev/null 2>&1 && \
-        update-desktop-database /usr/share/applications 2>/dev/null && \
-        echo -e "${G} Desktop database updated for Brave.${W}"
+        update-desktop-database /usr/share/applications >> "$LOG_FILE" 2>&1 && \
+        log_msg "Refreshed primary desktop app system records cleanly."
 }
 
 set_default_browser() {
     echo -e "\n${R} [${W}-${R}]${C} Setting Firefox as default browser...${W}"
+    log_msg "Initiating system default browser adjustments to default system mapping entries: Firefox"
 
-    # Set via xdg-settings — only works inside a live X session; skip silently if $DISPLAY is unset
     if command -v xdg-settings >/dev/null 2>&1 && [ -n "${DISPLAY:-}" ]; then
-        xdg-settings set default-web-browser firefox.desktop 2>/dev/null && \
-            echo -e "${G} xdg-settings: Firefox set as default.${W}"
+        xdg-settings set default-web-browser firefox.desktop >> "$LOG_FILE" 2>&1 && \
+            log_msg "xdg-settings updated context browser pointers safely."
     fi
 
-    # Set via update-alternatives (system-wide fallback)
     if command -v update-alternatives >/dev/null 2>&1; then
-        update-alternatives --set x-www-browser "$(command -v firefox)" 2>/dev/null && \
-            echo -e "${G} update-alternatives: Firefox set as default.${W}"
+        update-alternatives --set x-www-browser "$(command -v firefox)" >> "$LOG_FILE" 2>&1 && \
+            log_msg "update-alternatives points web hooks towards Firefox."
     fi
 
-    # Set BROWSER env variable system-wide via profile.d
     cat > /etc/profile.d/default_browser.sh <<'EOF'
 export BROWSER=firefox
 EOF
     chmod 644 /etc/profile.d/default_browser.sh
 
-    # Set xdg mimeapps AND XFCE helpers.rc for root and the sudo user.
-    # helpers.rc is what XFCE's Default Applications dialog (exo-preferred-applications)
-    # actually reads to determine the selected browser — mimeapps.list alone is NOT enough.
     for homedir in /root "/home/$username"; do
         [ -d "$homedir" ] || continue
         mkdir -p "$homedir/.config/xfce4"
         mkdir -p "$homedir/.config"
 
-        # mimeapps.list — used by xdg-open and other XDG-aware apps
         cat > "$homedir/.config/mimeapps.list" <<'EOF'
 [Default Applications]
 text/html=firefox.desktop
@@ -256,13 +278,9 @@ x-scheme-handler/https=firefox.desktop
 x-scheme-handler/about=firefox.desktop
 x-scheme-handler/unknown=firefox.desktop
 EOF
-        echo -e "${G} mimeapps.list set for $homedir${W}"
+        log_msg "Updated localized context applications configuration: $homedir/.config/mimeapps.list"
 
-        # FIX: helpers.rc — this is what XFCE Default Applications dialog reads.
-        # Without this entry the dialog always shows "Debian Sensible Browser"
-        # regardless of what mimeapps.list says.
         if [ -f "$homedir/.config/xfce4/helpers.rc" ]; then
-            # Update existing entry if present, otherwise append
             if grep -q "^WebBrowser=" "$homedir/.config/xfce4/helpers.rc"; then
                 sed -i 's/^WebBrowser=.*/WebBrowser=firefox/' "$homedir/.config/xfce4/helpers.rc"
             else
@@ -271,42 +289,36 @@ EOF
         else
             echo "WebBrowser=firefox" > "$homedir/.config/xfce4/helpers.rc"
         fi
-        echo -e "${G} helpers.rc set for $homedir${W}"
+        log_msg "Modified desktop environment components tracking structure: $homedir/.config/xfce4/helpers.rc"
     done
-
-    echo -e "${G} Firefox is now the default browser.\n${W}"
 }
 
 install_languages() {
     banner
     cat <<- EOF
-        ${Y} ---${G} Select Coding Languages ${Y}---
+         ${Y} ---${G} Select Coding Languages ${Y}---
 
-        ${C} [${W}1${C}] Node.js
-        ${C} [${W}2${C}] Python
-        ${C} [${W}3${C}] All (Node.js + Python)
-        ${C} [${W}4${C}] Skip! (Default)
+         ${C} [${W}1${C}] Node.js
+         ${C} [${W}2${C}] Python
+         ${C} [${W}3${C}] All (Node.js + Python)
+         ${C} [${W}4${C}] Skip! (Default)
 
-    EOF
+EOF
     read -n1 -p "${R} [${G}~${R}]${Y} Select an Option: ${G}" LANG_OPTION
     { banner; sleep 1; }
 
     install_node_latest() {
-        echo -e "${G}Installing ${Y}Node.js (latest)${W}"
-        apt-get update -y
-        apt-get install -y nodejs npm
-        npm install -g n
-        n latest
-        npm install -g npm@latest
-        command -v node >/dev/null 2>&1 && node -v
+        run_silent "Updating dependencies for JS environments" apt-get update -y
+        run_silent "Installing initial distribution packages for Node.js and NPM modules" apt-get install -y nodejs npm
+        run_silent "Installing runtime global manager utility module (n)" npm install -g n
+        run_silent "Switching Node engine to absolute stable production release" n latest
+        run_silent "Upgrading global node package manager execution client layer" npm install -g npm@latest
     }
 
     install_python_latest() {
-        echo -e "${G}Installing ${Y}Python (latest from repos)${W}"
-        apt-get update -y
-        apt-get install -y python3 python3-pip python3-venv
-        python3 -m pip install --upgrade pip
-        command -v python3 >/dev/null 2>&1 && python3 --version
+        run_silent "Updating repository tracking flags for python dependencies" apt-get update -y
+        run_silent "Installing Python core runtime environment modules and safe sandbox setups" apt-get install -y python3 python3-pip python3-venv
+        run_silent "Upgrading base application engine pip systems inside python installations" python3 -m pip install --upgrade pip
     }
 
     if [[ ${LANG_OPTION} == 1 ]]; then
@@ -318,11 +330,11 @@ install_languages() {
         install_python_latest
     else
         echo -e "${Y} [!] Skipping Language Installation\n"
+        log_msg "User skipped manual backend language interpreter tasks selection."
         sleep 1
         return
     fi
 
-    # Refresh shell environment for version checks
     hash -r
     source /etc/profile
 }
@@ -330,26 +342,23 @@ install_languages() {
 install_softwares() {
     banner
 
-    # ── Browsers: auto-install all three, no prompt ───────────────────
     echo -e "${R} [${W}-${R}]${C} Installing Browsers...${W}"
     install_firefox
     install_chromium
     install_brave
-    # Set Firefox as default after all browsers are installed
     set_default_browser
 
-    # ── IDE: ask user ─────────────────────────────────────────────────
     [[ ("$arch" != 'armhf') || ("$arch" != *'armv7'*) ]] && {
         banner
         cat <<- EOF
-            ${Y} ---${G} Select IDE ${Y}---
+             ${Y} ---${G} Select IDE ${Y}---
 
-            ${C} [${W}1${C}] Cursor AI Editor (Recommended)
-            ${C} [${W}2${C}] Visual Studio Code
-            ${C} [${W}3${C}] All (Cursor + VSCode)
-            ${C} [${W}4${C}] Skip! (Default)
+             ${C} [${W}1${C}] Cursor AI Editor (Recommended)
+             ${C} [${W}2${C}] Visual Studio Code
+             ${C} [${W}3${C}] All (Cursor + VSCode)
+             ${C} [${W}4${C}] Skip! (Default)
 
-        EOF
+EOF
         read -n1 -p "${R} [${G}~${R}]${Y} Select an Option: ${G}" IDE_OPTION
         banner
 
@@ -362,21 +371,21 @@ install_softwares() {
             install_vscode
         else
             echo -e "${Y} [!] Skipping IDE Installation\n"
+            log_msg "User opted out of IDE profile deployment tools."
             sleep 1
         fi
     }
 
-    # ── Media Player: ask user ────────────────────────────────────────
     banner
     cat <<- EOF
-        ${Y} ---${G} Media Player ${Y}---
+         ${Y} ---${G} Media Player ${Y}---
 
-        ${C} [${W}1${C}] MPV Media Player (Recommended)
-        ${C} [${W}2${C}] VLC Media Player
-        ${C} [${W}3${C}] All (MPV + VLC)
-        ${C} [${W}4${C}] Skip! (Default)
+         ${C} [${W}1${C}] MPV Media Player (Recommended)
+         ${C} [${W}2${C}] VLC Media Player
+         ${C} [${W}3${C}] All (MPV + VLC)
+         ${C} [${W}4${C}] Skip! (Default)
 
-    EOF
+EOF
     read -n1 -p "${R} [${G}~${R}]${Y} Select an Option: ${G}" PLAYER_OPTION
     { banner; sleep 1; }
 
@@ -388,6 +397,7 @@ install_softwares() {
         install_apt "mpv" "vlc"
     else
         echo -e "${Y} [!] Skipping Media Player Installation\n"
+        log_msg "User configuration selection skipped multimedia packages."
         sleep 1
     fi
 
@@ -395,12 +405,11 @@ install_softwares() {
 }
 
 sound_fix() {
-    # FIX: idempotency guard — only prepend "bash ~/.sound" once, never duplicate
     if ! grep -q "bash ~/.sound" "$TERMUX_BIN/debian" 2>/dev/null; then
         echo "$(echo "bash ~/.sound" | cat - "$TERMUX_BIN/debian")" > "$TERMUX_BIN/debian"
         chmod +x "$TERMUX_BIN/debian"
+        log_msg "Sound Fix: Embedded startup processing configurations inside Termux application launch files."
     fi
-    # Add DISPLAY and PULSE_SERVER only if not already in /etc/profile
     grep -qxF 'export DISPLAY=":1"' /etc/profile || echo 'export DISPLAY=":1"' >> /etc/profile
     grep -qxF 'export PULSE_SERVER=127.0.0.1' /etc/profile || echo 'export PULSE_SERVER=127.0.0.1' >> /etc/profile
     source /etc/profile
@@ -409,50 +418,51 @@ sound_fix() {
 rem_theme() {
     theme=(Bright Daloa Emacs Moheli Retro Smoke)
     for rmi in "${theme[@]}"; do
-        [ -d "/usr/share/themes/$rmi" ] && rm -rf "/usr/share/themes/$rmi"
+        if [ -d "/usr/share/themes/$rmi" ]; then
+            rm -rf "/usr/share/themes/$rmi"
+            log_msg "Purged obsolete desktop theme folder structure: /usr/share/themes/$rmi"
+        fi
     done
 }
 
 rem_icon() {
-    # Use directory existence check — type -p only finds executables, not icon folders
-    # ubuntu-mono-light removed — Ubuntu-specific, does not exist on Debian
     icons=(LoginIcons)
     for rmf in "${icons[@]}"; do
-        [ -d "/usr/share/icons/$rmf" ] && rm -rf "/usr/share/icons/$rmf"
+        if [ -d "/usr/share/icons/$rmf" ]; then
+            rm -rf "/usr/share/icons/$rmf"
+            log_msg "Purged old system interface icons mapping directory: /usr/share/icons/$rmf"
+        fi
     done
 }
 
 add_clear_on_login() {
     cat > /etc/profile.d/clear_on_login.sh <<'EOF'
-# Clear terminal on login for a clean session
 clear
 EOF
     chmod 644 /etc/profile.d/clear_on_login.sh
-    echo -e "${G}Auto-clear on login enabled.${W}"
+    log_msg "Enabled auto terminal screen clear hook inside shell configurations."
 }
 
 add_alias_l() {
     cat > /etc/profile.d/alias_l.sh <<'EOF'
-# alias l for ls
 alias l='ls'
 EOF
     chmod 644 /etc/profile.d/alias_l.sh
     if [ -f /etc/bash.bashrc ]; then
         grep -qxF "alias l='ls'" /etc/bash.bashrc || echo "alias l='ls'" >> /etc/bash.bashrc
     fi
-    echo -e "${G}Alias 'l' -> 'ls' installed system-wide.${W}"
+    log_msg "System shortcut macro setup completed (l='ls')."
 }
 
 add_alias_cl() {
     cat > /etc/profile.d/alias_cl.sh <<'EOF'
-# alias cl for clear
 alias cl='clear'
 EOF
     chmod 644 /etc/profile.d/alias_cl.sh
     if [ -f /etc/bash.bashrc ]; then
         grep -qxF "alias cl='clear'" /etc/bash.bashrc || echo "alias cl='clear'" >> /etc/bash.bashrc
     fi
-    echo -e "${G}Alias 'cl' -> 'clear' installed system-wide.${W}"
+    log_msg "System shortcut macro setup completed (cl='clear')."
 }
 
 config() {
@@ -463,26 +473,30 @@ config() {
     add_alias_l
     add_alias_cl
 
-    yes | apt upgrade
-    yes | apt install gtk2-engines-murrine gtk2-engines-pixbuf sassc optipng inkscape libglib2.0-dev-bin
-    mv -vf /usr/share/backgrounds/xfce/xfce-verticals.png /usr/share/backgrounds/xfce/xfce-verticals-old.png 2>/dev/null || true
+    run_silent "Upgrading base package configurations before styling engine setups" apt upgrade -y
+    run_silent "Installing rendering UI engines, theme toolkits and dependency setups" apt install gtk2-engines-murrine gtk2-engines-pixbuf sassc optipng inkscape libglib2.0-dev-bin -y
+    
+    mv -vf /usr/share/backgrounds/xfce/xfce-verticals.png /usr/share/backgrounds/xfce/xfce-verticals-old.png >> "$LOG_FILE" 2>&1 || true
+    
     temp_folder=$(mktemp -d -p "$HOME")
-    { banner; sleep 1; cd "$temp_folder"; }
+    { banner; sleep 1; cd "$temp_folder" || exit; }
 
     echo -e "${R} [${W}-${R}]${C} Downloading Required Files..\n${W}"
-    downloader "fonts.tar.gz"          "https://github.com/MaheshTechnicals/Moded-Debian/releases/download/config/fonts.tar.gz"
-    downloader "icons.tar.gz"          "https://github.com/MaheshTechnicals/Moded-Debian/releases/download/config/icons.tar.gz"
-    downloader "wallpaper.tar.gz"      "https://github.com/MaheshTechnicals/Moded-Debian/releases/download/config/wallpaper.tar.gz"
-    downloader "gtk-themes.tar.gz"     "https://github.com/MaheshTechnicals/Moded-Debian/releases/download/config/gtk-themes.tar.gz"
-    # FIX: renamed from ubuntu-settings.tar.gz to debian-settings.tar.gz
+    downloader "fonts.tar.gz"           "https://github.com/MaheshTechnicals/Moded-Debian/releases/download/config/fonts.tar.gz"
+    downloader "icons.tar.gz"           "https://github.com/MaheshTechnicals/Moded-Debian/releases/download/config/icons.tar.gz"
+    downloader "wallpaper.tar.gz"       "https://github.com/MaheshTechnicals/Moded-Debian/releases/download/config/wallpaper.tar.gz"
+    downloader "gtk-themes.tar.gz"      "https://github.com/MaheshTechnicals/Moded-Debian/releases/download/config/gtk-themes.tar.gz"
     downloader "debian-settings.tar.gz" "https://github.com/MaheshTechnicals/Moded-Debian/releases/download/config/debian-settings.tar.gz"
 
     echo -e "${R} [${W}-${R}]${C} Unpacking Files..\n${W}"
-    tar -xvzf fonts.tar.gz          -C "/usr/local/share/fonts/"
-    tar -xvzf icons.tar.gz          -C "/usr/share/icons/"
-    tar -xvzf wallpaper.tar.gz      -C "/usr/share/backgrounds/xfce/"
-    tar -xvzf gtk-themes.tar.gz     -C "/usr/share/themes/"
-    tar -xvzf debian-settings.tar.gz -C "/home/$username/"
+    log_msg "Extracting runtime style sheets and configuration packages to core system assets."
+    
+    tar -xvzf fonts.tar.gz           -C "/usr/local/share/fonts/" >> "$LOG_FILE" 2>&1
+    tar -xvzf icons.tar.gz           -C "/usr/share/icons/" >> "$LOG_FILE" 2>&1
+    tar -xvzf wallpaper.tar.gz       -C "/usr/share/backgrounds/xfce/" >> "$LOG_FILE" 2>&1
+    tar -xvzf gtk-themes.tar.gz      -C "/usr/share/themes/" >> "$LOG_FILE" 2>&1
+    tar -xvzf debian-settings.tar.gz -C "/home/$username/" >> "$LOG_FILE" 2>&1
+    
     rm -fr "$temp_folder"
 
     echo -e "${R} [${W}-${R}]${C} Purging Unnecessary Files..${W}"
@@ -490,13 +504,13 @@ config() {
     rem_icon
 
     echo -e "${R} [${W}-${R}]${C} Rebuilding Font Cache..\n${W}"
-    fc-cache -fv
+    run_silent "Refreshing structural runtime OS font caches" fc-cache -fv
 
     echo -e "${R} [${W}-${R}]${C} Upgrading the System..\n${W}"
-    apt update
-    yes | apt upgrade
-    apt clean
-    yes | apt autoremove
+    run_silent "Updating system software indices" apt update
+    run_silent "Executing ultimate package sync update adjustments" apt upgrade -y
+    run_silent "Cleaning localized cache package archives" apt clean
+    run_silent "Autoremoving orphan system dependencies" apt autoremove -y
 }
 
 # ─────────────────────────────────────────────
