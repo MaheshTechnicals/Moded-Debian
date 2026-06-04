@@ -536,119 +536,96 @@ EOF
 # ─────────────────────────────────────────────
 setup_zsh() {
     banner
-    echo -e "${C}[*] Setting up Zsh + Oh My Zsh...${W}"
-    log_msg "STARTING: Zsh setup"
+    echo -e "${C}[*] Setting up Zsh (fast mode, no Oh My Zsh)...${W}"
+    log_msg "STARTING: Zsh fast setup"
 
     export DEBIAN_FRONTEND=noninteractive
 
-    # Install zsh if not already present
-    if ! command -v zsh &>/dev/null; then
-        run_silent "Installing Zsh" apt-get install -y zsh git curl nano
-    else
-        echo -e "${G}✓ Zsh already installed: $(zsh --version)${W}"
-        log_msg "Zsh already installed, skipping apt install."
-    fi
+    # Install zsh + apt-packaged plugins (no git clone = faster install)
+    run_silent "Installing zsh + plugins" \
+        apt-get install -y zsh zsh-autosuggestions zsh-syntax-highlighting git curl nano
 
-    # Helper: install Oh My Zsh for a given user
-    _install_omz_for() {
-        local target_user="$1"
-        local home_dir="$2"
+    command -v zsh &>/dev/null || { echo -e "${R}✗ Zsh install failed${W}"; return 1; }
 
-        echo -e "${C}[*] Installing Oh My Zsh for: ${Y}$target_user${W}"
-        log_msg "Installing Oh My Zsh for $target_user at $home_dir"
-
-        rm -rf "$home_dir/.oh-my-zsh"
-
-        if [[ "$target_user" == "root" ]]; then
-            KEEP_ZSHRC=yes CHSH=no RUNZSH=no HOME="$home_dir" \
-                sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)" "" --unattended \
-                >>"$LOG_FILE" 2>&1
-        else
-            sudo -u "$target_user" env KEEP_ZSHRC=yes CHSH=no RUNZSH=no HOME="$home_dir" \
-                sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)" "" --unattended \
-                >>"$LOG_FILE" 2>&1
+    # Remove Oh My Zsh if present — it sources 50+ files = 2s delay on proot
+    _remove_omz() {
+        local home_dir="$1"
+        if [ -d "$home_dir/.oh-my-zsh" ]; then
+            echo -e "${Y}[*] Removing Oh My Zsh (slow on proot)...${W}"
+            rm -rf "$home_dir/.oh-my-zsh"
+            log_msg "Removed Oh My Zsh from $home_dir"
+            echo -e "${G}✓ Oh My Zsh removed${W}"
         fi
-
-        # Create .zshrc from template if missing
-        if [ ! -f "$home_dir/.zshrc" ]; then
-            cp "$home_dir/.oh-my-zsh/templates/zshrc.zsh-template" "$home_dir/.zshrc"
-            [[ "$target_user" != "root" ]] && chown "$target_user:$target_user" "$home_dir/.zshrc"
-        fi
-
-        echo -e "${G}✓ Oh My Zsh installed for $target_user${W}"
-        log_msg "SUCCESS: Oh My Zsh for $target_user"
     }
 
-    # Helper: clone zsh-autosuggestions into a custom dir
-    _install_autosuggestions() {
-        local custom_dir="$1"
-        local owner="$2"
-        local plugin_dir="$custom_dir/plugins/zsh-autosuggestions"
-        mkdir -p "$custom_dir/plugins"
-        rm -rf "$plugin_dir"
-        git clone https://github.com/zsh-users/zsh-autosuggestions "$plugin_dir" >>"$LOG_FILE" 2>&1
-        [[ -n "$owner" ]] && chown -R "$owner:$owner" "$plugin_dir"
-        log_msg "zsh-autosuggestions cloned for $owner"
-    }
-
-    # Helper: write shortcuts block into a .zshrc (idempotent)
-    _configure_zshrc() {
+    # Write a minimal, fast .zshrc — no framework, pure zsh
+    _write_zshrc() {
         local zshrc="$1"
         local owner="$2"
 
-        # ── Performance: disable Oh My Zsh auto-update prompt ────
-        # (auto-update check itself adds ~200ms on proot)
-        sed -i 's/# zstyle .omz:update. mode disabled/zstyle '"'"':omz:update'"'"' mode disabled/' "$zshrc" 2>/dev/null || true
+        [ -f "$zshrc" ] && cp "$zshrc" "${zshrc}.bak"
 
-        # ── Plugins: git + autosuggestions only (keep it minimal) ─
-        if grep -q "^plugins=(" "$zshrc"; then
-            sed -i 's/^plugins=(.*)/plugins=(git zsh-autosuggestions)/' "$zshrc"
-        else
-            echo "plugins=(git zsh-autosuggestions)" >>"$zshrc"
-        fi
+        cat > "$zshrc" << 'ZSHRC'
+# ─────────────────────────────────────────────────────────────────
+#  .zshrc — Moded-Debian by Mahesh Technicals
+#  Optimized for proot/Android — target < 200ms startup
+# ─────────────────────────────────────────────────────────────────
 
-        # ── Append performance + shortcuts block (idempotent) ─────
-        if ! grep -q "# == Mahesh Technicals Shortcuts ==" "$zshrc"; then
-            cat >>"$zshrc" <<'ZSHBLOCK'
+# == PROMPT (git branch via built-in vcs_info, zero deps) =========
+autoload -Uz vcs_info
+precmd() { vcs_info }
+zstyle ':vcs_info:git:*' formats ' (%b)'
+setopt PROMPT_SUBST
+PROMPT='%F{cyan}%n%f%F{white}@%f%F{green}%m%f %F{yellow}%~%f%F{magenta}${vcs_info_msg_0_}%f %F{cyan}➜%f  '
 
-# == Performance Fixes (proot/Android) ===========================
-
-# FIX 1: compinit cache — biggest startup speedup.
-# Skip security check (chown issues in proot) and cache completions.
-# Regenerates cache only once per day via zcompdump timestamp.
+# == COMPLETION (cached — rebuilds only once per day) =============
 autoload -Uz compinit
-if [[ -n ~/.zcompdump(#qN.mh+24) ]]; then
+if [[ -n ${ZDOTDIR:-$HOME}/.zcompdump(#qN.mh+24) ]]; then
     compinit
 else
     compinit -C
 fi
-
-# FIX 2: Disable Oh My Zsh magic functions that scan filesystem.
-# DISABLE_MAGIC_FUNCTIONS stops pasting slowness.
-# DISABLE_UNTRACKED_FILES_DIRTY stops git status on every prompt.
-DISABLE_MAGIC_FUNCTIONS=true
-DISABLE_UNTRACKED_FILES_DIRTY=true
-
-# FIX 3: zsh-autosuggestions — limit history search buffer size.
-# Without this it scans entire history on every keystroke.
-ZSH_AUTOSUGGEST_BUFFER_MAX_SIZE=20
-ZSH_AUTOSUGGEST_USE_ASYNC=true
-ZSH_AUTOSUGGEST_STRATEGY=(history completion)
-
-# FIX 4: Reduce history file size (large history = slow startup).
-HISTSIZE=1000
-SAVEHIST=1000
-
-# FIX 5: Skip global compinit in /etc/zsh/zshrc (runs twice otherwise).
 skip_global_compinit=1
+zstyle ':completion:*' menu select
+zstyle ':completion:*' matcher-list 'm:{a-z}={A-Z}'
+zstyle ':completion:*' list-colors "${(s.:.)LS_COLORS}"
 
-# =================================================================
+# == HISTORY ======================================================
+HISTFILE=~/.zsh_history
+HISTSIZE=2000
+SAVEHIST=2000
+setopt HIST_IGNORE_DUPS HIST_IGNORE_SPACE SHARE_HISTORY
 
-# == Mahesh Technicals Shortcuts ==================================
-alias l='ls'
+# == OPTIONS ======================================================
+setopt AUTO_CD CORRECT NO_BEEP
+
+# == PLUGINS — lazy loaded after first prompt =====================
+# Plugins source AFTER prompt appears = shell feels instant.
+# Autosuggestions + syntax highlight available from second keystroke.
+_load_plugins() {
+    [ -f /usr/share/zsh-autosuggestions/zsh-autosuggestions.zsh ] && \
+        source /usr/share/zsh-autosuggestions/zsh-autosuggestions.zsh
+    [ -f /usr/share/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh ] && \
+        source /usr/share/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh
+    ZSH_AUTOSUGGEST_BUFFER_MAX_SIZE=20
+    ZSH_AUTOSUGGEST_USE_ASYNC=true
+    ZSH_AUTOSUGGEST_STRATEGY=(history completion)
+    precmd_functions=("${(@)precmd_functions:#_load_plugins}")
+}
+precmd_functions+=(_load_plugins)
+
+# == KEY BINDINGS =================================================
+bindkey -e
+bindkey '^[[A' history-search-backward
+bindkey '^[[B' history-search-forward
+bindkey '^[[3~' delete-char
+
+# == ALIASES ======================================================
+alias l='ls --color=auto'
 alias cl='clear'
-alias ll='ls -alF'
-alias la='ls -A'
+alias ll='ls -alF --color=auto'
+alias la='ls -A --color=auto'
+alias ls='ls --color=auto'
 alias ..='cd ..'
 alias ...='cd ../..'
 alias ....='cd ../../..'
@@ -665,6 +642,8 @@ alias ga='git add .'
 alias gc='git commit -m'
 alias gp='git push'
 alias gl='git log --oneline --graph --decorate'
+alias gd='git diff'
+alias gb='git branch'
 alias myip='curl -s ifconfig.me && echo'
 alias ports='ss -tulpn'
 alias meminfo='free -h'
@@ -674,69 +653,50 @@ alias cp='cp -i'
 alias mv='mv -i'
 alias zshconfig='nano ~/.zshrc'
 alias reload='source ~/.zshrc && echo "✓ .zshrc reloaded"'
-# =================================================================
-ZSHBLOCK
-            [[ -n "$owner" && "$owner" != "root" ]] && chown "$owner:$owner" "$zshrc"
-        fi
+# ─────────────────────────────────────────────────────────────────
+ZSHRC
 
-        # ── Pre-build zcompdump cache now (so first login is fast) ─
-        local home_dir
-        home_dir=$(eval echo "~$owner")
+        [[ "$owner" != "root" ]] && chown "$owner:$owner" "$zshrc"
+
         if [[ "$owner" == "root" ]]; then
             zsh -c "autoload -Uz compinit && compinit" >>"$LOG_FILE" 2>&1 || true
         else
             sudo -u "$owner" zsh -c "autoload -Uz compinit && compinit" >>"$LOG_FILE" 2>&1 || true
         fi
-
-        log_msg "SUCCESS: .zshrc configured (with performance fixes) for $owner"
+        log_msg "SUCCESS: .zshrc written for $owner"
     }
 
-    # Helper: set default shell to zsh (usermod, with /etc/passwd fallback)
     _set_zsh_default() {
         local target_user="$1"
         local zsh_path
         zsh_path=$(which zsh)
         if usermod -s "$zsh_path" "$target_user" >>"$LOG_FILE" 2>&1; then
-            echo -e "${G}✓ Default shell set to Zsh for $target_user${W}"
+            echo -e "${G}✓ Default shell -> Zsh ($target_user)${W}"
         else
             sed -i "s|^\($target_user:.*:\)/.*$|\1$zsh_path|" /etc/passwd
-            echo -e "${Y}⚠ usermod failed — set via /etc/passwd for $target_user${W}"
+            echo -e "${Y}[!] Set via /etc/passwd for $target_user${W}"
         fi
-        log_msg "Default shell -> zsh for $target_user"
+        log_msg "Default shell set to zsh for $target_user"
     }
 
-    # ── Root setup ───────────────────────────────────────────────
-    _install_omz_for "root" "/root"
-    _install_autosuggestions "/root/.oh-my-zsh/custom" "root"
-    _configure_zshrc "/root/.zshrc" "root"
+    # ── Root ─────────────────────────────────────────────────────
+    _remove_omz "/root"
+    _write_zshrc "/root/.zshrc" "root"
     _set_zsh_default "root"
 
-    # ── Normal user setup (if exists) ────────────────────────────
+    # ── Normal user ──────────────────────────────────────────────
     if [[ -n "$username" ]] && [[ "$username" != "root" ]]; then
-        local user_home="/home/$username"
-        _install_omz_for "$username" "$user_home"
-
-        # Reuse root's clone to avoid double download
-        local user_custom="$user_home/.oh-my-zsh/custom"
-        local user_plugin="$user_custom/plugins/zsh-autosuggestions"
-        mkdir -p "$user_custom/plugins"
-        if [ ! -d "$user_plugin" ]; then
-            cp -r /root/.oh-my-zsh/custom/plugins/zsh-autosuggestions "$user_plugin" 2>/dev/null \
-                || _install_autosuggestions "$user_custom" "$username"
-            chown -R "$username:$username" "$user_plugin"
-        fi
-
-        _configure_zshrc "$user_home/.zshrc" "$username"
+        _remove_omz "/home/$username"
+        _write_zshrc "/home/$username/.zshrc" "$username"
         _set_zsh_default "$username"
     fi
 
-    # ── System-wide aliases: profile.d + zshenv ──────────────────
+    # ── System-wide shortcuts ─────────────────────────────────────
     cat >/etc/profile.d/mahesh_shortcuts.sh <<'EOF'
-# Mahesh Technicals — system-wide shortcuts (bash + zsh)
-alias l='ls'
+alias l='ls --color=auto'
 alias cl='clear'
-alias ll='ls -alF'
-alias la='ls -A'
+alias ll='ls -alF --color=auto'
+alias la='ls -A --color=auto'
 alias ..='cd ..'
 alias vs='vncstart'
 alias vx='vncstop'
@@ -745,24 +705,10 @@ alias install='sudo apt-get install -y'
 EOF
     chmod 644 /etc/profile.d/mahesh_shortcuts.sh
 
-    mkdir -p /etc/zsh
-    if [ ! -f /etc/zsh/zshenv ] || ! grep -q "# Mahesh Technicals" /etc/zsh/zshenv; then
-        cat >>/etc/zsh/zshenv <<'EOF'
-
-# Mahesh Technicals — Zsh system-wide aliases
-alias l='ls'
-alias cl='clear'
-alias ll='ls -alF'
-alias la='ls -A'
-alias ..='cd ..'
-alias vs='vncstart'
-alias vx='vncstop'
-EOF
-    fi
-
-    echo -e "${G}✓ Zsh setup complete.${W}"
-    log_msg "SUCCESS: Zsh setup finished"
+    echo -e "${G}✓ Zsh fast setup complete.${W}"
+    log_msg "SUCCESS: Zsh fast setup finished"
 }
+
 
 config() {
     banner
