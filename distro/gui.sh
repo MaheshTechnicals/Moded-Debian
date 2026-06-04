@@ -92,13 +92,11 @@ fix_machineid() {
 
 banner() {
     clear
-    cat << 'EOF'
- ____  __________  _______    _   __
-/ __ \/ ____/ __ )/  _/   |  / | / /
-/ / / / __/ / __  |/ // /| | /  |/ / 
-/ /_/ / /___/ /_/ // // ___ |/ /|  /  
-/_____/_____/_____/___/_/  |_/_/ |_/   
-EOF
+    echo -e "${C}    ____  __________  _______    _   __"
+    echo -e "${Y}   / __ \/ ____/ __ )/  _/   |  / | / /"
+    echo -e "${G}  / / / / __/ / __  |/ // /| | /  |/ / "
+    echo -e "${C} / /_/ / /___/ /_/ // // ___ |/ /|  /  "
+    echo -e "${Y}/_____/_____/_____/___/_/  |_/_/ |_/   "
     echo -e "${G}💻 Debian GUI Setup Script by Mahesh Technicals\n${W}"
 }
 
@@ -107,22 +105,22 @@ note() {
     echo -e " ${G} [-] Successfully Installed !\n${W}"
     echo -e " ${Y} [*] You can check all execution logs at: $LOG_FILE\n${W}"
     sleep 1
-    cat << 'EOF'
-         [-] Type vncstart to run Vncserver.
-         [-] Type vncstop to stop Vncserver.
+    cat <<- EOF
+		 ${G}[-] Type ${C}vncstart${G} to run Vncserver.
+		 ${G}[-] Type ${C}vncstop${G} to stop Vncserver.
 
-         Install VNC VIEWER Apk on your Device.
+		 ${C}Install VNC VIEWER Apk on your Device.
 
-         Open VNC VIEWER & Click on + Button.
+		 ${C}Open VNC VIEWER & Click on + Button.
 
-         Enter the Address localhost:1 & Name anything you like.
+		 ${C}Enter the Address localhost:1 & Name anything you like.
 
-         Set the Picture Quality to High for better Quality.
+		 ${C}Set the Picture Quality to High for better Quality.
 
-         Click on Connect & Input the Password.
+		 ${C}Click on Connect & Input the Password.
 
-         Enjoy :D
-EOF
+		 ${C}Enjoy :D${W}
+	EOF
     log_msg "=== Setup Completed Successfully ==="
 }
 
@@ -294,14 +292,15 @@ EOF
 
 install_languages() {
     banner
-    cat << 'EOF'
-         --- Select Coding Languages ---
+    cat <<- EOF
+		${Y} ---${G} Select Coding Languages ${Y}---
 
-         [1] Node.js
-         [2] Python
-         [3] All (Node.js + Python)
-         [4] Skip! (Default)
-EOF
+		${C} [${W}1${C}] Node.js
+		${C} [${W}2${C}] Python
+		${C} [${W}3${C}] All (Node.js + Python)
+		${C} [${W}4${C}] Skip! (Default)
+
+	EOF
     read -n1 -p "${R} [${G}~${R}]${Y} Select an Option: ${G}" LANG_OPTION
     {
         banner
@@ -351,14 +350,15 @@ install_softwares() {
 
     [[ ("$arch" != 'armhf') || ("$arch" != *'armv7'*) ]] && {
         banner
-        cat << 'EOF'
-             --- Select IDE ---
+        cat <<- EOF
+			${Y} ---${G} Select IDE ${Y}---
 
-             [1] Cursor AI Editor (Recommended)
-             [2] Visual Studio Code
-             [3] All (Cursor + VSCode)
-             [4] Skip! (Default)
-EOF
+			${C} [${W}1${C}] Cursor AI Editor (Recommended)
+			${C} [${W}2${C}] Visual Studio Code
+			${C} [${W}3${C}] All (Cursor + VSCode)
+			${C} [${W}4${C}] Skip! (Default)
+
+		EOF
         read -n1 -p "${R} [${G}~${R}]${Y} Select an Option: ${G}" IDE_OPTION
         banner
 
@@ -377,14 +377,15 @@ EOF
     }
 
     banner
-    cat << 'EOF'
-         --- Media Player ---
+    cat <<- EOF
+		${Y} ---${G} Media Player ${Y}---
 
-         [1] MPV Media Player (Recommended)
-         [2] VLC Media Player
-         [3] All (MPV + VLC)
-         [4] Skip! (Default)
-EOF
+		${C} [${W}1${C}] MPV Media Player (Recommended)
+		${C} [${W}2${C}] VLC Media Player
+		${C} [${W}3${C}] All (MPV + VLC)
+		${C} [${W}4${C}] Skip! (Default)
+
+	EOF
     read -n1 -p "${R} [${G}~${R}]${Y} Select an Option: ${G}" PLAYER_OPTION
     {
         banner
