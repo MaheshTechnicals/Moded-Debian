@@ -596,68 +596,99 @@ setup_zsh() {
         local zshrc="$1"
         local owner="$2"
 
-        # Enable plugins line
+        # ── Performance: disable Oh My Zsh auto-update prompt ────
+        # (auto-update check itself adds ~200ms on proot)
+        sed -i 's/# zstyle .omz:update. mode disabled/zstyle '"'"':omz:update'"'"' mode disabled/' "$zshrc" 2>/dev/null || true
+
+        # ── Plugins: git + autosuggestions only (keep it minimal) ─
         if grep -q "^plugins=(" "$zshrc"; then
             sed -i 's/^plugins=(.*)/plugins=(git zsh-autosuggestions)/' "$zshrc"
         else
             echo "plugins=(git zsh-autosuggestions)" >>"$zshrc"
         fi
 
-        # Append shortcuts block only once
+        # ── Append performance + shortcuts block (idempotent) ─────
         if ! grep -q "# == Mahesh Technicals Shortcuts ==" "$zshrc"; then
-            cat >>"$zshrc" <<'SHORTCUTS'
+            cat >>"$zshrc" <<'ZSHBLOCK'
+
+# == Performance Fixes (proot/Android) ===========================
+
+# FIX 1: compinit cache — biggest startup speedup.
+# Skip security check (chown issues in proot) and cache completions.
+# Regenerates cache only once per day via zcompdump timestamp.
+autoload -Uz compinit
+if [[ -n ~/.zcompdump(#qN.mh+24) ]]; then
+    compinit
+else
+    compinit -C
+fi
+
+# FIX 2: Disable Oh My Zsh magic functions that scan filesystem.
+# DISABLE_MAGIC_FUNCTIONS stops pasting slowness.
+# DISABLE_UNTRACKED_FILES_DIRTY stops git status on every prompt.
+DISABLE_MAGIC_FUNCTIONS=true
+DISABLE_UNTRACKED_FILES_DIRTY=true
+
+# FIX 3: zsh-autosuggestions — limit history search buffer size.
+# Without this it scans entire history on every keystroke.
+ZSH_AUTOSUGGEST_BUFFER_MAX_SIZE=20
+ZSH_AUTOSUGGEST_USE_ASYNC=true
+ZSH_AUTOSUGGEST_STRATEGY=(history completion)
+
+# FIX 4: Reduce history file size (large history = slow startup).
+HISTSIZE=1000
+SAVEHIST=1000
+
+# FIX 5: Skip global compinit in /etc/zsh/zshrc (runs twice otherwise).
+skip_global_compinit=1
+
+# =================================================================
 
 # == Mahesh Technicals Shortcuts ==================================
-# Basic
 alias l='ls'
 alias cl='clear'
 alias ll='ls -alF'
 alias la='ls -A'
-
-# Navigation
 alias ..='cd ..'
 alias ...='cd ../..'
 alias ....='cd ../../..'
-
-# VNC (Moded-Debian)
 alias vs='vncstart'
 alias vx='vncstop'
-
-# Package management
 alias update='sudo apt-get update && sudo apt-get upgrade -y'
 alias install='sudo apt-get install -y'
 alias remove='sudo apt-get remove -y'
 alias purge='sudo apt-get purge -y'
 alias autoremove='sudo apt-get autoremove -y'
 alias search='apt-cache search'
-
-# Git
 alias gs='git status'
 alias ga='git add .'
 alias gc='git commit -m'
 alias gp='git push'
 alias gl='git log --oneline --graph --decorate'
-
-# System info
 alias myip='curl -s ifconfig.me && echo'
 alias ports='ss -tulpn'
 alias meminfo='free -h'
 alias diskinfo='df -h'
-
-# Safety
 alias rm='rm -i'
 alias cp='cp -i'
 alias mv='mv -i'
-
-# Zsh config
 alias zshconfig='nano ~/.zshrc'
 alias reload='source ~/.zshrc && echo "✓ .zshrc reloaded"'
 # =================================================================
-SHORTCUTS
+ZSHBLOCK
             [[ -n "$owner" && "$owner" != "root" ]] && chown "$owner:$owner" "$zshrc"
         fi
 
-        log_msg "SUCCESS: .zshrc configured for $owner at $zshrc"
+        # ── Pre-build zcompdump cache now (so first login is fast) ─
+        local home_dir
+        home_dir=$(eval echo "~$owner")
+        if [[ "$owner" == "root" ]]; then
+            zsh -c "autoload -Uz compinit && compinit" >>"$LOG_FILE" 2>&1 || true
+        else
+            sudo -u "$owner" zsh -c "autoload -Uz compinit && compinit" >>"$LOG_FILE" 2>&1 || true
+        fi
+
+        log_msg "SUCCESS: .zshrc configured (with performance fixes) for $owner"
     }
 
     # Helper: set default shell to zsh (usermod, with /etc/passwd fallback)
