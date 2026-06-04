@@ -185,9 +185,11 @@ install_vscode() {
     # FIX: downloader() is a bash function — call directly, not via run_silent
     downloader "/tmp/code.sh" "https://raw.githubusercontent.com/MaheshTechnicals/Kali-Nethunter/refs/heads/main/vscode"
     chmod +x /tmp/code.sh
-    # FIX: VSCode installer is interactive — run directly so output shows on screen
+    # FIX: The vscode script does NOT support -i flag — it ignores all arguments.
+    # It blocks on: read -p "Enter your choice [1 or 2]"
+    # We auto-feed "1" (Install) via echo pipe so it never waits for keyboard input.
     echo -e "${C}Running VSCode installer (this may take a while)...${W}"
-    bash /tmp/code.sh -i
+    echo "1" | bash /tmp/code.sh
     log_msg "VSCode installation completed."
     echo -e "${G}✓ VSCode installation finished.${W}"
 }
