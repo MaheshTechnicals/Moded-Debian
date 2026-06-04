@@ -529,6 +529,210 @@ EOF
     log_msg "Alias cl=clear set."
 }
 
+# ─────────────────────────────────────────────
+# ZSH SETUP (integrated into gui.sh)
+# Installs Zsh + Oh My Zsh + shortcuts for
+# both root and the sudo user automatically.
+# ─────────────────────────────────────────────
+setup_zsh() {
+    banner
+    echo -e "${C}[*] Setting up Zsh + Oh My Zsh...${W}"
+    log_msg "STARTING: Zsh setup"
+
+    export DEBIAN_FRONTEND=noninteractive
+
+    # Install zsh if not already present
+    if ! command -v zsh &>/dev/null; then
+        run_silent "Installing Zsh" apt-get install -y zsh git curl nano
+    else
+        echo -e "${G}✓ Zsh already installed: $(zsh --version)${W}"
+        log_msg "Zsh already installed, skipping apt install."
+    fi
+
+    # Helper: install Oh My Zsh for a given user
+    _install_omz_for() {
+        local target_user="$1"
+        local home_dir="$2"
+
+        echo -e "${C}[*] Installing Oh My Zsh for: ${Y}$target_user${W}"
+        log_msg "Installing Oh My Zsh for $target_user at $home_dir"
+
+        rm -rf "$home_dir/.oh-my-zsh"
+
+        if [[ "$target_user" == "root" ]]; then
+            KEEP_ZSHRC=yes CHSH=no RUNZSH=no HOME="$home_dir" \
+                sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)" "" --unattended \
+                >>"$LOG_FILE" 2>&1
+        else
+            sudo -u "$target_user" env KEEP_ZSHRC=yes CHSH=no RUNZSH=no HOME="$home_dir" \
+                sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)" "" --unattended \
+                >>"$LOG_FILE" 2>&1
+        fi
+
+        # Create .zshrc from template if missing
+        if [ ! -f "$home_dir/.zshrc" ]; then
+            cp "$home_dir/.oh-my-zsh/templates/zshrc.zsh-template" "$home_dir/.zshrc"
+            [[ "$target_user" != "root" ]] && chown "$target_user:$target_user" "$home_dir/.zshrc"
+        fi
+
+        echo -e "${G}✓ Oh My Zsh installed for $target_user${W}"
+        log_msg "SUCCESS: Oh My Zsh for $target_user"
+    }
+
+    # Helper: clone zsh-autosuggestions into a custom dir
+    _install_autosuggestions() {
+        local custom_dir="$1"
+        local owner="$2"
+        local plugin_dir="$custom_dir/plugins/zsh-autosuggestions"
+        mkdir -p "$custom_dir/plugins"
+        rm -rf "$plugin_dir"
+        git clone https://github.com/zsh-users/zsh-autosuggestions "$plugin_dir" >>"$LOG_FILE" 2>&1
+        [[ -n "$owner" ]] && chown -R "$owner:$owner" "$plugin_dir"
+        log_msg "zsh-autosuggestions cloned for $owner"
+    }
+
+    # Helper: write shortcuts block into a .zshrc (idempotent)
+    _configure_zshrc() {
+        local zshrc="$1"
+        local owner="$2"
+
+        # Enable plugins line
+        if grep -q "^plugins=(" "$zshrc"; then
+            sed -i 's/^plugins=(.*)/plugins=(git zsh-autosuggestions)/' "$zshrc"
+        else
+            echo "plugins=(git zsh-autosuggestions)" >>"$zshrc"
+        fi
+
+        # Append shortcuts block only once
+        if ! grep -q "# == Mahesh Technicals Shortcuts ==" "$zshrc"; then
+            cat >>"$zshrc" <<'SHORTCUTS'
+
+# == Mahesh Technicals Shortcuts ==================================
+# Basic
+alias l='ls'
+alias cl='clear'
+alias ll='ls -alF'
+alias la='ls -A'
+
+# Navigation
+alias ..='cd ..'
+alias ...='cd ../..'
+alias ....='cd ../../..'
+
+# VNC (Moded-Debian)
+alias vs='vncstart'
+alias vx='vncstop'
+
+# Package management
+alias update='sudo apt-get update && sudo apt-get upgrade -y'
+alias install='sudo apt-get install -y'
+alias remove='sudo apt-get remove -y'
+alias purge='sudo apt-get purge -y'
+alias autoremove='sudo apt-get autoremove -y'
+alias search='apt-cache search'
+
+# Git
+alias gs='git status'
+alias ga='git add .'
+alias gc='git commit -m'
+alias gp='git push'
+alias gl='git log --oneline --graph --decorate'
+
+# System info
+alias myip='curl -s ifconfig.me && echo'
+alias ports='ss -tulpn'
+alias meminfo='free -h'
+alias diskinfo='df -h'
+
+# Safety
+alias rm='rm -i'
+alias cp='cp -i'
+alias mv='mv -i'
+
+# Zsh config
+alias zshconfig='nano ~/.zshrc'
+alias reload='source ~/.zshrc && echo "✓ .zshrc reloaded"'
+# =================================================================
+SHORTCUTS
+            [[ -n "$owner" && "$owner" != "root" ]] && chown "$owner:$owner" "$zshrc"
+        fi
+
+        log_msg "SUCCESS: .zshrc configured for $owner at $zshrc"
+    }
+
+    # Helper: set default shell to zsh (usermod, with /etc/passwd fallback)
+    _set_zsh_default() {
+        local target_user="$1"
+        local zsh_path
+        zsh_path=$(which zsh)
+        if usermod -s "$zsh_path" "$target_user" >>"$LOG_FILE" 2>&1; then
+            echo -e "${G}✓ Default shell set to Zsh for $target_user${W}"
+        else
+            sed -i "s|^\($target_user:.*:\)/.*$|\1$zsh_path|" /etc/passwd
+            echo -e "${Y}⚠ usermod failed — set via /etc/passwd for $target_user${W}"
+        fi
+        log_msg "Default shell -> zsh for $target_user"
+    }
+
+    # ── Root setup ───────────────────────────────────────────────
+    _install_omz_for "root" "/root"
+    _install_autosuggestions "/root/.oh-my-zsh/custom" "root"
+    _configure_zshrc "/root/.zshrc" "root"
+    _set_zsh_default "root"
+
+    # ── Normal user setup (if exists) ────────────────────────────
+    if [[ -n "$username" ]] && [[ "$username" != "root" ]]; then
+        local user_home="/home/$username"
+        _install_omz_for "$username" "$user_home"
+
+        # Reuse root's clone to avoid double download
+        local user_custom="$user_home/.oh-my-zsh/custom"
+        local user_plugin="$user_custom/plugins/zsh-autosuggestions"
+        mkdir -p "$user_custom/plugins"
+        if [ ! -d "$user_plugin" ]; then
+            cp -r /root/.oh-my-zsh/custom/plugins/zsh-autosuggestions "$user_plugin" 2>/dev/null \
+                || _install_autosuggestions "$user_custom" "$username"
+            chown -R "$username:$username" "$user_plugin"
+        fi
+
+        _configure_zshrc "$user_home/.zshrc" "$username"
+        _set_zsh_default "$username"
+    fi
+
+    # ── System-wide aliases: profile.d + zshenv ──────────────────
+    cat >/etc/profile.d/mahesh_shortcuts.sh <<'EOF'
+# Mahesh Technicals — system-wide shortcuts (bash + zsh)
+alias l='ls'
+alias cl='clear'
+alias ll='ls -alF'
+alias la='ls -A'
+alias ..='cd ..'
+alias vs='vncstart'
+alias vx='vncstop'
+alias update='sudo apt-get update && sudo apt-get upgrade -y'
+alias install='sudo apt-get install -y'
+EOF
+    chmod 644 /etc/profile.d/mahesh_shortcuts.sh
+
+    mkdir -p /etc/zsh
+    if [ ! -f /etc/zsh/zshenv ] || ! grep -q "# Mahesh Technicals" /etc/zsh/zshenv; then
+        cat >>/etc/zsh/zshenv <<'EOF'
+
+# Mahesh Technicals — Zsh system-wide aliases
+alias l='ls'
+alias cl='clear'
+alias ll='ls -alF'
+alias la='ls -A'
+alias ..='cd ..'
+alias vs='vncstart'
+alias vx='vncstop'
+EOF
+    fi
+
+    echo -e "${G}✓ Zsh setup complete.${W}"
+    log_msg "SUCCESS: Zsh setup finished"
+}
+
 config() {
     banner
     sound_fix
@@ -536,6 +740,7 @@ config() {
     add_clear_on_login
     add_alias_l
     add_alias_cl
+    setup_zsh
 
     run_silent "Upgrading base packages" apt-get upgrade -y
     run_silent "Installing UI theme toolkits" apt-get install -y gtk2-engines-murrine gtk2-engines-pixbuf sassc optipng inkscape libglib2.0-dev-bin
