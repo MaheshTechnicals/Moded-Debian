@@ -112,14 +112,14 @@ setup_vnc() {
 	if [[ -d "$CURR_DIR/distro" ]] && [[ -e "$CURR_DIR/distro/vncstart" ]]; then
 		cp -f "$CURR_DIR/distro/vncstart" "$ddir/usr/local/bin/vncstart"
 	else
-		downloader "$CURR_DIR/vncstart" "https://raw.githubusercontent.com/MaheshTechnicals/Moded-Debian/refs/heads/main/distro/vncstart"
+		downloader "$CURR_DIR/vncstart" "https://raw.githubusercontent.com/MaheshTechnicals/Moded-Debian/refs/heads/kde-plasma/distro/vncstart"
 		mv -f "$CURR_DIR/vncstart" "$ddir/usr/local/bin/vncstart"
 	fi
 
 	if [[ -d "$CURR_DIR/distro" ]] && [[ -e "$CURR_DIR/distro/vncstop" ]]; then
 		cp -f "$CURR_DIR/distro/vncstop" "$ddir/usr/local/bin/vncstop"
 	else
-		downloader "$CURR_DIR/vncstop" "https://raw.githubusercontent.com/MaheshTechnicals/Moded-Debian/refs/heads/main/distro/vncstop"
+		downloader "$CURR_DIR/vncstop" "https://raw.githubusercontent.com/MaheshTechnicals/Moded-Debian/refs/heads/kde-plasma/distro/vncstop"
 		mv -f "$CURR_DIR/vncstop" "$ddir/usr/local/bin/vncstop"
 	fi
 
@@ -143,7 +143,7 @@ permission() {
 	if [[ -d "$CURR_DIR/distro" ]] && [[ -e "$CURR_DIR/distro/user.sh" ]]; then
 		cp -f "$CURR_DIR/distro/user.sh" "$ddir/root/user.sh"
 	else
-		downloader "$CURR_DIR/user.sh" "https://raw.githubusercontent.com/MaheshTechnicals/Moded-Debian/refs/heads/main/distro/user.sh"
+		downloader "$CURR_DIR/user.sh" "https://raw.githubusercontent.com/MaheshTechnicals/Moded-Debian/refs/heads/kde-plasma/distro/user.sh"
 		mv -f "$CURR_DIR/user.sh" "$ddir/root/user.sh"
 	fi
 	chmod +x "$ddir/root/user.sh"

@@ -63,8 +63,6 @@ downloader() {
     [[ -e "$dl_path" ]] && rm -rf "$dl_path"
     log_msg "Downloading $dl_url → $dl_path"
     echo -e "${C}Downloading: ${Y}$(basename "$dl_path")...${W}"
-    # FIX: use --progress-bar so the user can see download progress on screen
-    # --silent was hiding all output making it look frozen
     curl --progress-bar --insecure --fail \
         --retry-connrefused --retry 3 --retry-delay 2 \
         --location --output "$dl_path" "$dl_url"
@@ -109,7 +107,7 @@ banner() {
     echo -e "${G}  / / / / __/ / __  |/ // /| | /  |/ / "
     echo -e "${C} / /_/ / /___/ /_/ // // ___ |/ /|  /  "
     echo -e "${Y}/_____/_____/_____/___/_/  |_/_/ |_/   "
-    echo -e "${G}💻 Debian GUI Setup Script by Mahesh Technicals\n${W}"
+    echo -e "${G}💻 Debian KDE Plasma Setup Script by Mahesh Technicals\n${W}"
 }
 
 note() {
@@ -118,8 +116,8 @@ note() {
     echo -e " ${Y} [*] You can check all execution logs at: $LOG_FILE\n${W}"
     sleep 1
     cat <<- EOF
-		 ${G}[-] Type ${C}vncstart${G} to run Vncserver.
-		 ${G}[-] Type ${C}vncstop${G} to stop Vncserver.
+		 ${G}[-] Type ${C}vncstart${G} to start KDE Plasma VNC session.
+		 ${G}[-] Type ${C}vncstop${G} to stop KDE Plasma VNC session.
 
 		 ${C}Install VNC VIEWER Apk on your Device.
 
@@ -127,11 +125,11 @@ note() {
 
 		 ${C}Enter the Address localhost:1 & Name anything you like.
 
-		 ${C}Set the Picture Quality to High for better Quality.
+		 ${C}Set the Picture Quality to High for the best experience.
 
 		 ${C}Click on Connect & Input the Password.
 
-		 ${C}Enjoy :D${W}
+		 ${C}Enjoy KDE Plasma Desktop on Android! 🚀${W}
 	EOF
     log_msg "=== Setup Completed Successfully ==="
 }
@@ -149,7 +147,33 @@ package() {
     run_silent "Configuring DPKG" dpkg --configure -a
     run_silent "Holding udisks2 package changes" apt-mark hold udisks2
 
-    packs=(sudo gnupg2 curl nano git xz-utils at-spi2-core xfce4 xfce4-goodies xfce4-terminal librsvg2-common menu inetutils-tools dialog exo-utils tigervnc-standalone-server tigervnc-common tigervnc-tools dbus-x11 fonts-beng fonts-beng-extra gtk2-engines-murrine gtk2-engines-pixbuf apt-transport-https gh)
+    # ── KDE Plasma desktop packages ──────────────────────────────────────────
+    # plasma-desktop   : core Plasma shell + panel + applets
+    # kwin-x11         : KDE window manager for X11 (required for VNC)
+    # konsole          : KDE terminal emulator
+    # dolphin          : KDE file manager
+    # plasma-nm        : network manager plasma applet
+    # plasma-pa        : PulseAudio plasma applet (volume control)
+    # breeze           : Breeze window decoration & widget style
+    # breeze-icon-theme: Breeze icon set
+    # kde-config-gtk-style : GTK app styling inside KDE
+    # ark              : KDE archive manager
+    # kate             : KDE text editor
+    # gwenview         : KDE image viewer
+    # spectacle        : KDE screenshot tool
+    # kscreen          : KDE display configuration
+    # plasma-widgets-addons : extra Plasma widgets
+    # ─────────────────────────────────────────────────────────────────────────
+    packs=(sudo gnupg2 curl nano git xz-utils at-spi2-core
+           plasma-desktop kwin-x11 konsole dolphin
+           plasma-nm plasma-pa
+           breeze breeze-icon-theme kde-config-gtk-style
+           ark kate gwenview spectacle kscreen plasma-widgets-addons
+           librsvg2-common menu inetutils-tools dialog
+           tigervnc-standalone-server tigervnc-common tigervnc-tools dbus-x11
+           fonts-beng fonts-beng-extra
+           gtk2-engines-murrine gtk2-engines-pixbuf
+           apt-transport-https gh)
 
     for hulu in "${packs[@]}"; do
         if ! dpkg -s "$hulu" &>/dev/null; then
@@ -182,12 +206,8 @@ install_vscode() {
     echo -e "${C}Running: ${Y}Installing VSCode...${W}"
     log_msg "STARTING: Installing VSCode"
     run_silent "Installing binutils (VSCode requirement)" apt-get install -y binutils
-    # FIX: downloader() is a bash function — call directly, not via run_silent
     downloader "/tmp/code.sh" "https://raw.githubusercontent.com/MaheshTechnicals/Kali-Nethunter/refs/heads/main/vscode"
     chmod +x /tmp/code.sh
-    # FIX: The vscode script does NOT support -i flag — it ignores all arguments.
-    # It blocks on: read -p "Enter your choice [1 or 2]"
-    # We auto-feed "1" (Install) via echo pipe so it never waits for keyboard input.
     echo -e "${C}Running VSCode installer (this may take a while)...${W}"
     echo "1" | bash /tmp/code.sh
     log_msg "VSCode installation completed."
@@ -213,14 +233,11 @@ install_cursor() {
     fi
     echo -e "${C}Running: ${Y}Installing Cursor AI Editor...${W}"
     log_msg "STARTING: Installing Cursor"
-    # FIX: downloader() is a bash function — call directly, not via run_silent
     downloader "/tmp/cursor.sh" "https://raw.githubusercontent.com/MaheshTechnicals/cursor-free-vip-termux/refs/heads/main/cursor.sh"
     chmod +x /tmp/cursor.sh
     run_silent "Installing expect" apt-get install -y expect
 
     log_msg "Launching Cursor installer via expect"
-    # FIX: expect output must show on terminal so user sees progress — no log redirect
-    # Redirecting expect to log caused the script to appear frozen with no feedback
     expect << 'EOF'
 set timeout -1
 spawn sudo bash /tmp/cursor.sh -i
@@ -252,11 +269,8 @@ install_firefox() {
     fi
     echo -e "${C}Running: ${Y}Installing Firefox...${W}"
     log_msg "STARTING: Installing Firefox"
-    # FIX: downloader() is a bash function — call directly, not via run_silent
-    downloader "/tmp/firefox.sh" "https://raw.githubusercontent.com/MaheshTechnicals/Moded-Debian/refs/heads/main/distro/firefox.sh"
+    downloader "/tmp/firefox.sh" "https://raw.githubusercontent.com/MaheshTechnicals/Moded-Debian/refs/heads/kde-plasma/distro/firefox.sh"
     chmod +x /tmp/firefox.sh
-    # FIX: firefox.sh is an interactive script with its own colored output
-    # run_silent would hide all output making it look stuck — run directly
     echo -e "${C}Running Firefox installer (this may take a while)...${W}"
     bash /tmp/firefox.sh
     log_msg "Firefox installation completed."
@@ -269,31 +283,15 @@ install_brave() {
     else
         echo -e "${C}Running: ${Y}Installing Brave...${W}"
         log_msg "STARTING: Installing Brave"
-        # FIX: downloader() is a bash function — call directly, not via run_silent
-        downloader "/tmp/brave.sh" "https://raw.githubusercontent.com/MaheshTechnicals/Moded-Debian/refs/heads/main/distro/brave.sh"
+        downloader "/tmp/brave.sh" "https://raw.githubusercontent.com/MaheshTechnicals/Moded-Debian/refs/heads/kde-plasma/distro/brave.sh"
         chmod +x /tmp/brave.sh
-        # FIX: brave.sh is an interactive script with its own output — run directly
         echo -e "${C}Running Brave installer (this may take a while)...${W}"
         bash /tmp/brave.sh
         log_msg "Brave installation completed."
         echo -e "${G}✓ Brave installation finished.${W}"
     fi
 
-    mkdir -p /usr/share/xfce4/helpers
-    if [ ! -f /usr/share/xfce4/helpers/brave-browser.desktop ]; then
-        cat >/usr/share/xfce4/helpers/brave-browser.desktop <<'EOF'
-[Desktop Entry]
-Version=1.0
-Type=X-XFCE-Helper
-X-XFCE-Category=WebBrowser
-X-XFCE-CommandsWithParameter=brave-browser --no-sandbox "%s"
-Icon=brave-browser
-Name=Brave Web Browser
-X-XFCE-Commands=brave-browser --no-sandbox
-EOF
-        log_msg "Registered Brave as XFCE web browser helper."
-    fi
-
+    # Refresh desktop database so KDE Plasma picks up Brave
     command -v update-desktop-database >/dev/null 2>&1 &&
         update-desktop-database /usr/share/applications >>"$LOG_FILE" 2>&1 &&
         log_msg "Refreshed desktop database."
@@ -320,9 +318,9 @@ EOF
 
     for homedir in /root "/home/$username"; do
         [ -d "$homedir" ] || continue
-        mkdir -p "$homedir/.config/xfce4"
         mkdir -p "$homedir/.config"
 
+        # Standard XDG mime associations (works for KDE, GTK, CLI)
         cat >"$homedir/.config/mimeapps.list" <<'EOF'
 [Default Applications]
 text/html=firefox.desktop
@@ -333,16 +331,20 @@ x-scheme-handler/unknown=firefox.desktop
 EOF
         log_msg "Set mimeapps.list for $homedir"
 
-        if [ -f "$homedir/.config/xfce4/helpers.rc" ]; then
-            if grep -q "^WebBrowser=" "$homedir/.config/xfce4/helpers.rc"; then
-                sed -i 's/^WebBrowser=.*/WebBrowser=firefox/' "$homedir/.config/xfce4/helpers.rc"
+        # KDE Plasma: register default browser in kdeglobals
+        if [ -f "$homedir/.config/kdeglobals" ]; then
+            if grep -q "^BrowserApplication=" "$homedir/.config/kdeglobals"; then
+                sed -i 's/^BrowserApplication=.*/BrowserApplication=firefox.desktop/' \
+                    "$homedir/.config/kdeglobals"
             else
-                echo "WebBrowser=firefox" >>"$homedir/.config/xfce4/helpers.rc"
+                sed -i '/^\[General\]/a BrowserApplication=firefox.desktop' \
+                    "$homedir/.config/kdeglobals"
             fi
         else
-            echo "WebBrowser=firefox" >"$homedir/.config/xfce4/helpers.rc"
+            printf '[General]\nBrowserApplication=firefox.desktop\n' \
+                >"$homedir/.config/kdeglobals"
         fi
-        log_msg "Set XFCE helpers.rc WebBrowser=firefox for $homedir"
+        log_msg "Set KDE Plasma default browser in kdeglobals for $homedir"
     done
     echo -e "${G}✓ Firefox set as default browser.${W}"
 }
@@ -365,8 +367,6 @@ install_languages() {
     install_node_latest() {
         run_silent "Updating repos for Node.js" apt-get update -y
         run_silent "Installing Node.js and NPM" apt-get install -y nodejs npm
-        # FIX: npm install -g n and n latest are interactive and show progress
-        # run_silent hides output making it appear frozen — run directly
         echo -e "${C}Installing n (Node version manager)...${W}"
         npm install -g n 2>&1 | tee -a "$LOG_FILE"
         echo -e "${C}Switching to latest Node.js release (this may take a while)...${W}"
@@ -531,8 +531,8 @@ EOF
 
 # ─────────────────────────────────────────────
 # ZSH SETUP (integrated into gui.sh)
-# Installs Zsh + Oh My Zsh + shortcuts for
-# both root and the sudo user automatically.
+# Installs Zsh + fast config for both root and
+# the sudo user. No Oh My Zsh — faster startup.
 # ─────────────────────────────────────────────
 setup_zsh() {
     banner
@@ -541,13 +541,11 @@ setup_zsh() {
 
     export DEBIAN_FRONTEND=noninteractive
 
-    # Install zsh + apt-packaged plugins (no git clone = faster install)
     run_silent "Installing zsh + plugins" \
         apt-get install -y zsh zsh-autosuggestions zsh-syntax-highlighting git curl nano
 
     command -v zsh &>/dev/null || { echo -e "${R}✗ Zsh install failed${W}"; return 1; }
 
-    # Remove Oh My Zsh if present — it sources 50+ files = 2s delay on proot
     _remove_omz() {
         local home_dir="$1"
         if [ -d "$home_dir/.oh-my-zsh" ]; then
@@ -558,7 +556,6 @@ setup_zsh() {
         fi
     }
 
-    # Write a minimal, fast .zshrc — no framework, pure zsh
     _write_zshrc() {
         local zshrc="$1"
         local owner="$2"
@@ -567,7 +564,7 @@ setup_zsh() {
 
         cat > "$zshrc" << 'ZSHRC'
 # ─────────────────────────────────────────────────────────────────
-#  .zshrc — Moded-Debian by Mahesh Technicals
+#  .zshrc — Moded-Debian (KDE Plasma) by Mahesh Technicals
 #  Optimized for proot/Android — target < 200ms startup
 # ─────────────────────────────────────────────────────────────────
 
@@ -600,8 +597,6 @@ setopt HIST_IGNORE_DUPS HIST_IGNORE_SPACE SHARE_HISTORY
 setopt AUTO_CD CORRECT NO_BEEP
 
 # == PLUGINS — lazy loaded after first prompt =====================
-# Plugins source AFTER prompt appears = shell feels instant.
-# Autosuggestions + syntax highlight available from second keystroke.
 _load_plugins() {
     [ -f /usr/share/zsh-autosuggestions/zsh-autosuggestions.zsh ] && \
         source /usr/share/zsh-autosuggestions/zsh-autosuggestions.zsh
@@ -631,6 +626,7 @@ alias ...='cd ../..'
 alias ....='cd ../../..'
 alias vs='vncstart'
 alias vx='vncstop'
+alias plasma-restart='kquitapp5 plasmashell && kstart5 plasmashell &'
 alias update='sudo apt-get update && sudo apt-get upgrade -y'
 alias install='sudo apt-get install -y'
 alias remove='sudo apt-get remove -y'
@@ -700,6 +696,7 @@ alias la='ls -A --color=auto'
 alias ..='cd ..'
 alias vs='vncstart'
 alias vx='vncstop'
+alias plasma-restart='kquitapp5 plasmashell && kstart5 plasmashell &'
 alias update='sudo apt-get update && sudo apt-get upgrade -y'
 alias install='sudo apt-get install -y'
 EOF
@@ -709,6 +706,97 @@ EOF
     log_msg "SUCCESS: Zsh fast setup finished"
 }
 
+# ─────────────────────────────────────────────
+# KDE PLASMA CONFIGURATION
+# Applies Breeze Dark theme, disables compositing
+# (not supported well in proot/VNC), sets default
+# terminal to Konsole, and sets wallpaper path.
+# ─────────────────────────────────────────────
+setup_kde_config() {
+    banner
+    echo -e "${C}[*] Applying KDE Plasma configuration...${W}"
+    log_msg "STARTING: KDE Plasma configuration"
+
+    for user_home in "/root" "/home/$username"; do
+        [ -d "$user_home" ] || continue
+        local cfg="$user_home/.config"
+        mkdir -p "$cfg"
+
+        # Breeze Dark look-and-feel + Firefox as default browser
+        cat > "$cfg/kdeglobals" <<'EOF'
+[General]
+ColorScheme=BreezeDark
+BrowserApplication=firefox.desktop
+TerminalApplication=konsole
+
+[KDE]
+LookAndFeelPackage=org.kde.breezedark.desktop
+widgetStyle=Breeze
+SingleClick=false
+
+[Icons]
+Theme=breeze-dark
+EOF
+
+        # Disable compositing — proot/VNC does not accelerate OpenGL well
+        # This prevents a black/unresponsive desktop on first launch
+        cat > "$cfg/kwinrc" <<'EOF'
+[Compositing]
+Backend=XRender
+Enabled=false
+
+[Windows]
+FocusPolicy=ClickToFocus
+
+[Desktops]
+Number=2
+Rows=1
+EOF
+
+        # Konsole default profile — dark color scheme
+        mkdir -p "$user_home/.local/share/konsole"
+        cat > "$user_home/.local/share/konsole/Default.profile" <<'EOF'
+[Appearance]
+ColorScheme=Breeze
+Font=Monospace,11,-1,5,50,0,0,0,0,0
+
+[General]
+Name=Default
+Parent=FALLBACK/
+TerminalColumns=120
+TerminalRows=35
+
+[Scrolling]
+HistorySize=10000
+ScrollBarPosition=2
+EOF
+
+        # Set KDE default wallpaper (picks the first image in /usr/share/wallpapers/)
+        mkdir -p "$cfg/plasma-org.kde.plasma.desktop-appletsrc.d"
+        cat > "$cfg/plasma-org.kde.plasma.desktop-appletsrc" <<'EOF'
+[Containments][1][Wallpaper][org.kde.image][General]
+FillMode=2
+Image=file:///usr/share/wallpapers/
+EOF
+
+        # Taskbar / panel config — single bottom panel
+        cat > "$cfg/plasmashellrc" <<'EOF'
+[PlasmaViews][Panel 2][Defaults]
+thickness=44
+
+[PlasmaViews][Panel 2][Horizontal1920]
+thickness=44
+EOF
+
+        [[ "$user_home" != "/root" ]] && \
+            chown -R "$username:$username" "$user_home/.config" \
+                                          "$user_home/.local" 2>/dev/null || true
+        log_msg "KDE Plasma config applied for $user_home"
+    done
+
+    echo -e "${G}✓ KDE Plasma configuration applied.${W}"
+    log_msg "SUCCESS: KDE Plasma configuration finished"
+}
 
 config() {
     banner
@@ -720,9 +808,13 @@ config() {
     setup_zsh
 
     run_silent "Upgrading base packages" apt-get upgrade -y
-    run_silent "Installing UI theme toolkits" apt-get install -y gtk2-engines-murrine gtk2-engines-pixbuf sassc optipng inkscape libglib2.0-dev-bin
+    # GTK theme engines + Breeze-GTK so GTK apps look native inside KDE Plasma
+    run_silent "Installing UI theme toolkits" apt-get install -y \
+        gtk2-engines-murrine gtk2-engines-pixbuf sassc optipng inkscape \
+        libglib2.0-dev-bin breeze-gtk-theme kde-config-gtk-style
 
-    mv -vf /usr/share/backgrounds/xfce/xfce-verticals.png /usr/share/backgrounds/xfce/xfce-verticals-old.png >>"$LOG_FILE" 2>&1 || true
+    # KDE Plasma wallpapers live in /usr/share/wallpapers/
+    mkdir -p /usr/share/wallpapers/
 
     # FIX: cd was inside a subshell { } so the parent shell's working directory
     # never changed — all downloader calls wrote files to $HOME not $temp_folder
@@ -733,20 +825,20 @@ config() {
     cd "$temp_folder" || exit 1
 
     echo -e "${R} [${W}-${R}]${C} Downloading Required Files..\n${W}"
-    downloader "fonts.tar.gz"           "https://github.com/MaheshTechnicals/Moded-Debian/releases/download/config/fonts.tar.gz"
-    downloader "icons.tar.gz"           "https://github.com/MaheshTechnicals/Moded-Debian/releases/download/config/icons.tar.gz"
-    downloader "wallpaper.tar.gz"       "https://github.com/MaheshTechnicals/Moded-Debian/releases/download/config/wallpaper.tar.gz"
-    downloader "gtk-themes.tar.gz"      "https://github.com/MaheshTechnicals/Moded-Debian/releases/download/config/gtk-themes.tar.gz"
-    downloader "debian-settings.tar.gz" "https://github.com/MaheshTechnicals/Moded-Debian/releases/download/config/debian-settings.tar.gz"
+    downloader "fonts.tar.gz"        "https://github.com/MaheshTechnicals/Moded-Debian/releases/download/config/fonts.tar.gz"
+    downloader "icons.tar.gz"        "https://github.com/MaheshTechnicals/Moded-Debian/releases/download/config/icons.tar.gz"
+    downloader "wallpaper.tar.gz"    "https://github.com/MaheshTechnicals/Moded-Debian/releases/download/config/wallpaper.tar.gz"
+    downloader "gtk-themes.tar.gz"   "https://github.com/MaheshTechnicals/Moded-Debian/releases/download/config/gtk-themes.tar.gz"
+    downloader "kde-settings.tar.gz" "https://github.com/MaheshTechnicals/Moded-Debian/releases/download/config/kde-settings.tar.gz"
 
     echo -e "${R} [${W}-${R}]${C} Unpacking Files..\n${W}"
     log_msg "Extracting config assets to system directories."
 
-    tar -xvzf fonts.tar.gz           -C "/usr/local/share/fonts/"      >>"$LOG_FILE" 2>&1
-    tar -xvzf icons.tar.gz           -C "/usr/share/icons/"            >>"$LOG_FILE" 2>&1
-    tar -xvzf wallpaper.tar.gz       -C "/usr/share/backgrounds/xfce/" >>"$LOG_FILE" 2>&1
-    tar -xvzf gtk-themes.tar.gz      -C "/usr/share/themes/"           >>"$LOG_FILE" 2>&1
-    tar -xvzf debian-settings.tar.gz -C "/home/$username/"             >>"$LOG_FILE" 2>&1
+    tar -xvzf fonts.tar.gz        -C "/usr/local/share/fonts/"   >>"$LOG_FILE" 2>&1
+    tar -xvzf icons.tar.gz        -C "/usr/share/icons/"          >>"$LOG_FILE" 2>&1
+    tar -xvzf wallpaper.tar.gz    -C "/usr/share/wallpapers/"     >>"$LOG_FILE" 2>&1
+    tar -xvzf gtk-themes.tar.gz   -C "/usr/share/themes/"         >>"$LOG_FILE" 2>&1
+    tar -xvzf kde-settings.tar.gz -C "/home/$username/"            >>"$LOG_FILE" 2>&1
 
     # Return to home before removing temp folder
     cd "$HOME" || true
@@ -758,6 +850,9 @@ config() {
 
     echo -e "${R} [${W}-${R}]${C} Rebuilding Font Cache..\n${W}"
     run_silent "Rebuilding font cache" fc-cache -fv
+
+    # Apply KDE Plasma settings (theme, wallpaper, compositing, Konsole profile)
+    setup_kde_config
 
     echo -e "${R} [${W}-${R}]${C} Upgrading the System..\n${W}"
     run_silent "Final system update" apt-get update -y

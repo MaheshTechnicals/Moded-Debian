@@ -4,6 +4,41 @@ This project follows [Semantic Versioning](https://semver.org/) and the [Keep a 
 
 ---
 
+## [v1.3.0] - 2026-06-04
+
+### 🚀 Major Change — KDE Plasma Desktop Migration
+
+This release replaces the **XFCE4** desktop environment with **KDE Plasma 5**.  
+All existing features (browsers, IDEs, media players, Zsh, VNC, sound, etc.) are preserved.
+
+### ✨ Added
+- **distro/gui.sh**: Added `setup_kde_config()` — programmatically configures KDE Plasma on first run:
+  - Applies **Breeze Dark** look-and-feel, color scheme, and icon theme via `~/.config/kdeglobals`.
+  - Disables KWin compositing (`~/.config/kwinrc`) — OpenGL/XRender compositing is unreliable in proot/VNC environments and causes a black or unresponsive desktop.
+  - Creates a default **Konsole** terminal profile (`~/.local/share/konsole/Default.profile`) with dark color scheme and 120-column width.
+  - Writes a basic `plasmashellrc` for the bottom taskbar panel.
+  - Config is applied for both root and the sudo user.
+- **distro/gui.sh**: Added `breeze-gtk-theme` and `kde-config-gtk-style` to UI toolkit install so GTK2/GTK3 apps render with the Breeze look inside KDE Plasma.
+- **distro/gui.sh**: Added `plasma-restart` alias in Zsh `.zshrc` and system-wide `/etc/profile.d/mahesh_shortcuts.sh`:
+  - `plasma-restart` → `kquitapp5 plasmashell && kstart5 plasmashell &`
+- **distro/gui.sh**: `set_default_browser()` now sets Firefox as the default browser in **KDE Plasma's `kdeglobals`** (`BrowserApplication=firefox.desktop`) in addition to xdg-settings, update-alternatives and mimeapps.list.
+- **README.md**: Added `plasma-restart` usage note, KDE troubleshooting entries, and updated Technical Info table.
+
+### 🔄 Changed
+- **distro/vncstart**: Changed `xstartup` from `/usr/bin/xfce4-session` to `/usr/bin/startplasma-x11`. Added `XDG_SESSION_TYPE=x11` and `QT_QPA_PLATFORMTHEME=kde` exports so KDE Plasma launches correctly on X11/VNC.
+- **distro/gui.sh** `package()`: Replaced XFCE4 packages with KDE Plasma packages:
+  - **Removed:** `xfce4`, `xfce4-goodies`, `xfce4-terminal`, `exo-utils`
+  - **Added:** `plasma-desktop`, `kwin-x11`, `konsole`, `dolphin`, `plasma-nm`, `plasma-pa`, `breeze`, `breeze-icon-theme`, `kde-config-gtk-style`, `ark`, `kate`, `gwenview`, `spectacle`, `kscreen`, `plasma-widgets-addons`
+- **distro/gui.sh** `config()`: Wallpaper extraction path changed from `/usr/share/backgrounds/xfce/` → `/usr/share/wallpapers/` (KDE Plasma standard location). Removed the `xfce-verticals.png` rename step.
+- **distro/gui.sh** `config()`: `debian-settings.tar.gz` renamed to `kde-settings.tar.gz` in both the download URL and tar extraction step. **⚠ Action required:** upload a `kde-settings.tar.gz` release asset to your GitHub repo containing KDE-compatible home-directory config files (e.g. `.config/`, `.local/share/konsole/`).
+- **distro/gui.sh** `install_brave()`: Removed XFCE4-specific `/usr/share/xfce4/helpers/brave-browser.desktop` registration. Brave is now registered via the standard desktop database (`update-desktop-database`), which KDE Plasma reads natively.
+- **distro/gui.sh** `set_default_browser()`: Removed XFCE4-specific `~/.config/xfce4/helpers.rc` `WebBrowser=` entries. Default browser is now set via xdg, mimeapps.list, and kdeglobals only.
+- **distro/gui.sh** `setup_zsh()` `.zshrc`: Added `plasma-restart` alias for quick Plasma shell recovery.
+- **README.md**: Updated desktop environment from XFCE4 to KDE Plasma 5 throughout. Minimum storage updated from 4 GB → 6 GB (KDE Plasma has a larger footprint than XFCE4). Added KDE-specific troubleshooting entries.
+- **CHANGELOG.md**: Added this entry.
+
+---
+
 ## [v1.2.0] - 2026-06-04
 
 ### 🐛 Fixed
@@ -74,4 +109,4 @@ This project follows [Semantic Versioning](https://semver.org/) and the [Keep a 
 ---
 
 ## 📜 License
-This project is licensed under the **MIT License** — see the [LICENSE](LICENSE) file for details.
+This project is licensed under the **Apache License** — see the [LICENSE](LICENSE) file for details.

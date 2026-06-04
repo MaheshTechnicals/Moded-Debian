@@ -1,1 +1,4 @@
-dbus-launch vncserver -geometry 1920x1080 -depth 24 -zliblevel 0 -name modded-debian -xstartup /usr/bin/xfce4-session
+#!/bin/bash
+export XDG_SESSION_TYPE=x11
+export QT_QPA_PLATFORMTHEME=kde
+dbus-launch vncserver -geometry 1920x1080 -depth 24 -zliblevel 0 -name modded-debian -xstartup /usr/bin/startplasma-x11

@@ -53,7 +53,7 @@ login() {
         cp "$TERMUX_HOME/Moded-Debian/distro/gui.sh" /home/$user/gui.sh
         chmod +x /home/$user/gui.sh
     else
-        wget -q --show-progress https://raw.githubusercontent.com/MaheshTechnicals/Moded-Debian/refs/heads/main/distro/gui.sh
+        wget -q --show-progress https://raw.githubusercontent.com/MaheshTechnicals/Moded-Debian/refs/heads/kde-plasma/distro/gui.sh
         mv -vf gui.sh /home/$user/gui.sh
         chmod +x /home/$user/gui.sh
     fi

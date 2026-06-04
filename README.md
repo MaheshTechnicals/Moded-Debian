@@ -1,4 +1,4 @@
-# 🐧 Moded Debian Script
+# 🐧 Moded Debian — KDE Plasma Edition
 
 ![Moded Debian Banner](./distro/image.jpg)
 
@@ -8,24 +8,29 @@
 [![GitHub license](https://img.shields.io/github/license/MaheshTechnicals/Moded-Debian?style=for-the-badge)](./LICENSE)
 [![Last Commit](https://img.shields.io/github/last-commit/MaheshTechnicals/Moded-Debian?style=for-the-badge)](https://github.com/MaheshTechnicals/Moded-Debian/commits/main)
 
-**Run Debian Linux GUI on Android using Termux — fast, stable, and beautifully customized.**  
-Experience the power of a full Debian desktop environment directly on your Android device with Modded Debian by Mahesh Technicals.
+**Run Debian Linux with KDE Plasma GUI on Android using Termux — fast, stable, and beautifully customized.**  
+Experience the power of a full KDE Plasma desktop environment directly on your Android device with Modded Debian by Mahesh Technicals.
 
-This enhanced version comes with preinstalled developer tools, optimized performance, and a modern graphical interface that brings the true Linux experience to mobile.
+This enhanced version comes with preinstalled developer tools, optimized performance, and the modern KDE Plasma graphical interface that brings the true Linux experience to mobile.
 
 ---
 
 ## 🚀 Key Features
 
+✅ **KDE Plasma Desktop** — Full KDE Plasma 5 desktop with Breeze Dark theme  
 ✅ **Audio Fixed** – Full sound support in Termux (Proot-Distro)  
-✅ **Lightweight RootFS** – Requires only ~4 GB storage  
+✅ **Lightweight RootFS** – Requires only ~6 GB storage  
 ✅ **Triple Browser Setup** – Firefox (default) + Chromium + Brave, all auto-installed  
-✅ **Firefox as Default** – Set system-wide via xdg-settings, update-alternatives & mimeapps  
+✅ **Firefox as Default** – Set system-wide via xdg-settings, update-alternatives, mimeapps & kdeglobals  
 ✅ **Bangla Font Support** – Perfect for multilingual users  
 ✅ **Preinstalled Media Players** – VLC & MPV  
 ✅ **Code Ready** – Visual Studio Code (arm64/aarch64) & Cursor AI Editor  
+✅ **Konsole Terminal** – KDE's feature-rich terminal emulator  
+✅ **Dolphin File Manager** – KDE's powerful file manager  
+✅ **KDE Apps Included** – Kate editor, Gwenview, Spectacle, Ark, KScreen  
+✅ **Breeze-GTK Theme** – GTK apps match KDE's Breeze look  
 ✅ **User-Friendly Installer** – Designed for beginners  
-✅ **Beautiful UI** – Modern icons, wallpapers, and system themes  
+✅ **Optimized for proot/VNC** – Compositing disabled for maximum performance  
 ✅ **proot-distro v5.x Compatible** – Works with both new OCI and legacy rootfs paths  
 
 ---
@@ -60,7 +65,7 @@ bash user.sh
 ```
 > Enter your root username (lowercase, no spaces).
 
-### Step 4 — Launch Debian GUI
+### Step 4 — Launch KDE Plasma GUI Setup
 Restart Termux again and type:
 ```bash
 debian
@@ -68,19 +73,19 @@ sudo bash gui.sh
 ```
 > Set and remember your **VNC password**.
 
-### Step 5 — Start and Stop GUI
+### Step 5 — Start and Stop KDE Plasma
 ```bash
-vncstart   # Start Debian GUI
-vncstop    # Stop Debian GUI
+vncstart   # Start KDE Plasma GUI
+vncstop    # Stop KDE Plasma GUI
 ```
 
 ### Step 6 — Connect Using VNC Viewer
 1. Install **[VNC Viewer](https://play.google.com/store/apps/details?id=com.realvnc.viewer.android&hl=en)** on your phone.  
 2. Create a new connection:
    - **Address:** `localhost:1`
-   - **Name:** `Debian`
+   - **Name:** `Debian KDE`
    - **Quality:** High
-3. Connect & enjoy Debian Desktop on Android!
+3. Connect & enjoy KDE Plasma Desktop on Android!
 
 ---
 
@@ -89,11 +94,12 @@ vncstop    # Stop Debian GUI
 - Use `debian` command anytime to enter the Debian CLI.  
 - To start the GUI session: `vncstart`  
 - To stop the GUI session: `vncstop`  
+- Restart a crashed Plasma shell: `plasma-restart`  
 - To **remove Debian completely**, run:
   ```bash
   bash remove.sh
   ```
-- You must have **at least 4 GB free storage** before installation.
+- You must have **at least 6 GB free storage** before installation (KDE Plasma requires more than XFCE4).
 
 ---
 
@@ -113,13 +119,18 @@ See the full list of updates and improvements here:
 
 ## 🛠️ Technical Info
 
-- **Base Distro:** Debian (Proot-Distro)
-- **Architecture:** aarch64 / arm64
-- **Display Server:** TigerVNC
-- **Desktop Environment:** XFCE4
-- **Developed For:** Android (Termux)
-- **Minimum Storage Required:** 4 GB free
-- **proot-distro Compatibility:** v4.x (legacy) and v5.x (OCI-based)
+| Property | Value |
+|---|---|
+| Base Distro | Debian (Proot-Distro) |
+| Architecture | aarch64 / arm64 |
+| Display Server | TigerVNC |
+| Desktop Environment | **KDE Plasma 5** |
+| Window Manager | KWin (X11) |
+| Terminal | Konsole |
+| File Manager | Dolphin |
+| Developed For | Android (Termux) |
+| Minimum Storage | 6 GB free |
+| proot-distro Compatibility | v4.x (legacy) and v5.x (OCI-based) |
 
 ---
 
@@ -133,8 +144,21 @@ vncstart
 ```
 Then reconnect via VNC Viewer.
 
+**Q:** KDE Plasma shell crashed or desktop is empty?  
+**A:** Run inside the VNC session terminal (Konsole):
+```bash
+plasma-restart
+```
+Or from CLI:
+```bash
+kquitapp5 plasmashell && kstart5 plasmashell &
+```
+
 **Q:** Audio not working?  
-**A:** Run `pavucontrol` inside Debian GUI and make sure output device is not muted.
+**A:** Run `pavucontrol` inside the Debian GUI and make sure the output device is not muted.
+
+**Q:** Screen is black / KDE not loading?  
+**A:** Compositing is disabled by default for proot/VNC stability. If the desktop still doesn't appear, run `vncstop` then `vncstart` again.
 
 **Q:** Got "Error Installing Distro!" even though Debian downloaded fine?  
 **A:** You are likely on proot-distro v5.x. The setup script auto-detects both old and new rootfs paths. Re-run `bash setup.sh` with the latest version of this repo.
@@ -161,6 +185,7 @@ This project uses Debian images provided by **Termux Proot-Distro**.
 All credits to:
 - [Termux Team](https://github.com/termux)
 - [Proot-Distro Maintainers](https://github.com/termux/proot-distro)
+- [KDE Community](https://kde.org)
 
 ---
 
@@ -177,7 +202,7 @@ If you like this project, please:
 
 ### 🔍 SEO Keywords
 
-`debian termux`, `debian android`, `linux on android`, `termux debian setup`, `vnc viewer termux`, `moded debian`, `maheshtechnicals debian`, `debian xfce termux`, `proot distro debian`, `install debian termux gui`, `debian vnc setup android`
+`debian termux`, `debian android`, `linux on android`, `termux debian setup`, `vnc viewer termux`, `moded debian`, `maheshtechnicals debian`, `debian kde plasma termux`, `proot distro debian`, `install debian termux gui`, `debian vnc setup android`, `kde plasma android termux`
 
 ---
 
