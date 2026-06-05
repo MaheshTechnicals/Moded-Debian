@@ -56,6 +56,7 @@ package() {
 
     # Clean PulseAudio entries from ~/.sound (if exists)
     if [ -f "$HOME/.sound" ]; then
+        sed -i '/pacmd load-module module-aaudio-sink/d' "$HOME/.sound"
         sed -i '/pulseaudio --start --exit-idle-time=-1/d' "$HOME/.sound"
         sed -i '/pacmd load-module module-native-protocol-tcp auth-ip-acl=127.0.0.1 auth-anonymous=1/d' "$HOME/.sound"
         echo -e "${G}Cleaned PulseAudio entries from ~/.sound.${W}"
