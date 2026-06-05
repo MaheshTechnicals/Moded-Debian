@@ -154,7 +154,7 @@ permission() {
 	echo "$(getprop persist.sys.timezone)" > "$ddir/etc/timezone"
 
 	# Create the 'debian' shortcut command in Termux
-	echo "proot-distro login debian" > "$PREFIX/bin/debian"
+	echo "clear; proot-distro login debian" > "$PREFIX/bin/debian"
 	chmod +x "$PREFIX/bin/debian"
 	termux-reload-settings
 

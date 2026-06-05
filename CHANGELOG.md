@@ -4,6 +4,25 @@ This project follows [Semantic Versioning](https://semver.org/) and the [Keep a 
 
 ---
 
+## [v1.3.0] - 2026-06-05
+
+### 🗑️ Removed
+- **distro/gui.sh**: Removed `install_chromium()` function and its call from `install_softwares()`. Now only Firefox and Brave are installed. Chromium is no longer part of this project.
+
+### 🚀 Added
+- **distro/user.sh**: Added `clear;` prefix to the `debian` launcher command so the Termux terminal auto-clears when user types `debian`.
+- **setup.sh**: Added `clear;` prefix to the `debian` shortcut command for CLI mode login (when user has not run `user.sh` yet).
+
+### 🐛 Fixed
+- **distro/vncstart**: Added shebang `#!/usr/bin/env bash` — was missing, could cause issues if sourced instead of executed.
+- **distro/gui.sh** (`config()`): Added `mkdir -p` calls before every `tar -xvzf` extraction to ensure destination directories exist. Prevents extraction failure when directories are missing.
+- **distro/gui.sh** (`config()`): Added safety check — `debian-settings.tar.gz` is only extracted if `$username` is non-empty and `/home/$username/` exists. Prevents silent extraction failure into a non-existent directory.
+
+### 📝 Updated
+- **README.md**: Changed "Triple Browser Setup" → "Dual Browser Setup" (Firefox + Brave only).
+
+---
+
 ## [v1.2.0] - 2026-06-04
 
 ### 🐛 Fixed

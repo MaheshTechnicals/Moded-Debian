@@ -19,7 +19,7 @@ This enhanced version comes with preinstalled developer tools, optimized perform
 
 ✅ **Audio Fixed** – Full sound support in Termux (Proot-Distro)  
 ✅ **Lightweight RootFS** – Requires only ~4 GB storage  
-✅ **Triple Browser Setup** – Firefox (default) + Chromium + Brave, all auto-installed  
+✅ **Dual Browser Setup** – Firefox (default) + Brave, both auto-installed  
 ✅ **Firefox as Default** – Set system-wide via xdg-settings, update-alternatives & mimeapps  
 ✅ **Bangla Font Support** – Perfect for multilingual users  
 ✅ **Preinstalled Media Players** – VLC & MPV  

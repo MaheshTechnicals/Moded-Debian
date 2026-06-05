@@ -232,18 +232,6 @@ EOF
     echo -e "${G}✓ Cursor installation finished.${W}"
 }
 
-install_chromium() {
-    if dpkg -s chromium &>/dev/null; then
-        echo -e "${Y}Chromium is already Installed!${W}"
-        return
-    fi
-    run_silent "Updating repos for Chromium" apt-get update -y
-    run_silent "Installing Chromium" apt-get install -y chromium
-    if [ -f /usr/share/applications/chromium.desktop ]; then
-        sed -i 's/chromium %U/chromium --no-sandbox %U/g' /usr/share/applications/chromium.desktop
-        log_msg "Applied --no-sandbox flag to Chromium desktop entry."
-    fi
-}
 
 install_firefox() {
     if [[ $(command -v firefox) ]]; then
@@ -407,7 +395,6 @@ install_softwares() {
 
     echo -e "${R} [${W}-${R}]${C} Installing Browsers...${W}"
     install_firefox
-    install_chromium
     install_brave
     set_default_browser
 
@@ -742,11 +729,22 @@ config() {
     echo -e "${R} [${W}-${R}]${C} Unpacking Files..\n${W}"
     log_msg "Extracting config assets to system directories."
 
+    mkdir -p "/usr/local/share/fonts/"
+    mkdir -p "/usr/share/icons/"
+    mkdir -p "/usr/share/backgrounds/xfce/"
+    mkdir -p "/usr/share/themes/"
+
     tar -xvzf fonts.tar.gz           -C "/usr/local/share/fonts/"      >>"$LOG_FILE" 2>&1
     tar -xvzf icons.tar.gz           -C "/usr/share/icons/"            >>"$LOG_FILE" 2>&1
     tar -xvzf wallpaper.tar.gz       -C "/usr/share/backgrounds/xfce/" >>"$LOG_FILE" 2>&1
     tar -xvzf gtk-themes.tar.gz      -C "/usr/share/themes/"           >>"$LOG_FILE" 2>&1
-    tar -xvzf debian-settings.tar.gz -C "/home/$username/"             >>"$LOG_FILE" 2>&1
+
+    if [[ -n "$username" ]] && [[ -d "/home/$username" ]]; then
+        tar -xvzf debian-settings.tar.gz -C "/home/$username/"         >>"$LOG_FILE" 2>&1
+    else
+        echo -e "${Y}[!] Skipping debian-settings.tar.gz — no valid user home directory.${W}"
+        log_msg "WARNING: debian-settings.tar.gz skipped — username empty or /home/$username missing."
+    fi
 
     # Return to home before removing temp folder
     cd "$HOME" || true

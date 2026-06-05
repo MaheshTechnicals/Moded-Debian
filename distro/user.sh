@@ -45,7 +45,7 @@ login() {
     echo "$user ALL=(ALL:ALL) NOPASSWD:ALL" >> /etc/sudoers
 
     # Write debian launcher with user login and fix permissions
-    echo "proot-distro login --user $user debian --bind /dev/null:/proc/sys/kernel/cap_last_last --shared-tmp --fix-low-ports" > "$TERMUX_BIN/debian"
+    echo "clear; proot-distro login --user $user debian --bind /dev/null:/proc/sys/kernel/cap_last_last --shared-tmp --fix-low-ports" > "$TERMUX_BIN/debian"
     chmod +x "$TERMUX_BIN/debian"
 
     # FIX: corrected project folder name from modded-ubuntu to Moded-Debian
