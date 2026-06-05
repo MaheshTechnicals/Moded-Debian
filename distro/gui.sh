@@ -297,8 +297,14 @@ set_default_browser() {
     fi
 
     if command -v update-alternatives >/dev/null 2>&1; then
-        update-alternatives --set x-www-browser "$(command -v firefox)" >>"$LOG_FILE" 2>&1 &&
-            log_msg "update-alternatives: Firefox set as default."
+        local ff_path
+        ff_path=$(command -v firefox 2>/dev/null)
+        if [[ -n "$ff_path" ]]; then
+            update-alternatives --set x-www-browser "$ff_path" >>"$LOG_FILE" 2>&1 &&
+                log_msg "update-alternatives: Firefox set as default."
+        else
+            log_msg "WARNING: update-alternatives skipped ? firefox not found in PATH yet."
+        fi
     fi
 
     cat >/etc/profile.d/default_browser.sh <<'EOF'
@@ -398,7 +404,7 @@ install_softwares() {
     install_brave
     set_default_browser
 
-    [[ ("$arch" != 'armhf') || ("$arch" != *'armv7'*) ]] && {
+    [[ "$arch" != 'armhf' && "$arch" != *'armv7'* ]] && {
         banner
         cat <<- EOF
 			${Y} ---${G} Select IDE ${Y}---
@@ -456,10 +462,19 @@ install_softwares() {
 }
 
 sound_fix() {
-    if ! grep -q "bash ~/.sound" "$TERMUX_BIN/debian" 2>/dev/null; then
-        echo "$(echo "bash ~/.sound" | cat - "$TERMUX_BIN/debian")" >"$TERMUX_BIN/debian"
-        chmod +x "$TERMUX_BIN/debian"
-        log_msg "Sound fix applied to Debian launcher."
+    # gui.sh runs INSIDE proot-distro. The Termux /data/data/com.termux path
+    # is NOT mounted inside proot by default, so modifying $TERMUX_BIN/debian
+    # from here silently fails. We check if the path exists first.
+    # The clear + sound setup is already handled on the Termux side by setup.sh and user.sh.
+    if [[ -f "$TERMUX_BIN/debian" ]]; then
+        if ! grep -q "bash ~/.sound" "$TERMUX_BIN/debian" 2>/dev/null; then
+            echo "$(echo "bash ~/.sound" | cat - "$TERMUX_BIN/debian")" >"$TERMUX_BIN/debian"
+            chmod +x "$TERMUX_BIN/debian"
+            log_msg "Sound fix applied to Debian launcher."
+        fi
+    else
+        log_msg "WARNING: $TERMUX_BIN/debian not accessible inside proot ? sound fix skipped. Already applied from Termux side."
+        echo -e "${Y}[!] Sound fix will activate on next login from Termux side.${W}"
     fi
     grep -qxF 'export DISPLAY=":1"' /etc/profile || echo 'export DISPLAY=":1"' >>/etc/profile
     grep -qxF 'export PULSE_SERVER=127.0.0.1' /etc/profile || echo 'export PULSE_SERVER=127.0.0.1' >>/etc/profile
@@ -740,10 +755,13 @@ config() {
     tar -xvzf gtk-themes.tar.gz      -C "/usr/share/themes/"           >>"$LOG_FILE" 2>&1
 
     if [[ -n "$username" ]] && [[ -d "/home/$username" ]]; then
-        tar -xvzf debian-settings.tar.gz -C "/home/$username/"         >>"$LOG_FILE" 2>&1
+        tar -xvzf debian-settings.tar.gz -C "/home/$username/" >>"$LOG_FILE" 2>&1
+        chown -R "$username:$username" "/home/$username/" >>"$LOG_FILE" 2>&1
+        echo -e "${G}? debian-settings extracted and ownership fixed for $username.${W}"
+        log_msg "SUCCESS: debian-settings.tar.gz extracted to /home/$username/ with correct ownership."
     else
-        echo -e "${Y}[!] Skipping debian-settings.tar.gz — no valid user home directory.${W}"
-        log_msg "WARNING: debian-settings.tar.gz skipped — username empty or /home/$username missing."
+        echo -e "${Y}[!] Skipping debian-settings.tar.gz ? no valid user home directory.${W}"
+        log_msg "WARNING: debian-settings.tar.gz skipped ? username empty or /home/$username missing."
     fi
 
     # Return to home before removing temp folder
