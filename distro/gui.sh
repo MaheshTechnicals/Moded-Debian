@@ -479,6 +479,7 @@ sound_fix() {
     grep -qxF 'export DISPLAY=":1"' /etc/profile || echo 'export DISPLAY=":1"' >>/etc/profile
     grep -qxF 'export PULSE_SERVER=127.0.0.1' /etc/profile || echo 'export PULSE_SERVER=127.0.0.1' >>/etc/profile
     source /etc/profile
+    echo -e "${Y}[!] DISPLAY and PULSE_SERVER will be active on your next login.${W}"
 }
 
 rem_theme() {

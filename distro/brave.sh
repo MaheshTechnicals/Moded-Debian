@@ -152,7 +152,7 @@ main() {
 
 # Helpers
 available() { command -v "${1:?}" >/dev/null; }
-first_of() { for c in "${@:?}"; do if available "$c"; then echo "$c"; return 0; fi; done; return return 1; }
+first_of() { for c in "${@:?}"; do if available "$c"; then echo "$c"; return 0; fi; done; return 1; }
 show() { (set -x; "${@:?}"); }
 error() { exec >&2; printf "Error: "; printf "%s\n" "${@:?}"; exit 1; }
 newer() { [ "$(printf "%s\n%s" "$1" "$2"|sort -V|head -n1)" = "${2:?}" ]; }
