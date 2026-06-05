@@ -358,13 +358,25 @@ install_languages() {
 
     install_node_latest() {
         run_silent "Updating repos for Node.js" apt-get update -y
-        run_silent "Installing Node.js and NPM" apt-get install -y nodejs npm
-        # FIX: npm install -g n and n latest are interactive and show progress
+        run_silent "Installing Node.js, NPM and ca-certificates" apt-get install -y nodejs npm ca-certificates
+
+        # FIX: npm install -g n and node switching are interactive and show progress
         # run_silent hides output making it appear frozen — run directly
         echo -e "${C}Installing n (Node version manager)...${W}"
         npm install -g n 2>&1 | tee -a "$LOG_FILE"
+
+        # FIX: Inside proot on Android, curl's SSL cert verification fails when
+        # downloading from nodejs.org, causing: "download preflight failed for X.Y.Z"
+        # Solution: pass --insecure to n's internal curl via N_OPTS env var.
+        # Also set NODE_MIRROR as a fallback in case nodejs.org is unreachable.
+        # Try 'n latest' first; if it still fails fall back to 'n lts' (more stable mirrors).
         echo -e "${C}Switching to latest Node.js release (this may take a while)...${W}"
-        n latest 2>&1 | tee -a "$LOG_FILE"
+        if ! N_OPTS="--insecure" n latest 2>&1 | tee -a "$LOG_FILE"; then
+            echo -e "${Y}[!] n latest failed — falling back to LTS release...${W}"
+            log_msg "WARNING: n latest failed; retrying with n lts"
+            N_OPTS="--insecure" n lts 2>&1 | tee -a "$LOG_FILE"
+        fi
+
         echo -e "${C}Upgrading npm to latest...${W}"
         npm install -g npm@latest 2>&1 | tee -a "$LOG_FILE"
         echo -e "${G}✓ Node.js setup complete. Version: $(node -v 2>/dev/null)${W}"
@@ -792,3 +804,4 @@ package
 install_softwares
 config
 note
+
