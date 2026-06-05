@@ -303,7 +303,7 @@ set_default_browser() {
             update-alternatives --set x-www-browser "$ff_path" >>"$LOG_FILE" 2>&1 &&
                 log_msg "update-alternatives: Firefox set as default."
         else
-            log_msg "WARNING: update-alternatives skipped ? firefox not found in PATH yet."
+            log_msg "WARNING: update-alternatives skipped — firefox not found in PATH yet."
         fi
     fi
 
@@ -473,7 +473,7 @@ sound_fix() {
             log_msg "Sound fix applied to Debian launcher."
         fi
     else
-        log_msg "WARNING: $TERMUX_BIN/debian not accessible inside proot ? sound fix skipped. Already applied from Termux side."
+        log_msg "WARNING: $TERMUX_BIN/debian not accessible inside proot — sound fix skipped. Already applied from Termux side."
         echo -e "${Y}[!] Sound fix will activate on next login from Termux side.${W}"
     fi
     grep -qxF 'export DISPLAY=":1"' /etc/profile || echo 'export DISPLAY=":1"' >>/etc/profile
@@ -757,11 +757,11 @@ config() {
     if [[ -n "$username" ]] && [[ -d "/home/$username" ]]; then
         tar -xvzf debian-settings.tar.gz -C "/home/$username/" >>"$LOG_FILE" 2>&1
         chown -R "$username:$username" "/home/$username/" >>"$LOG_FILE" 2>&1
-        echo -e "${G}? debian-settings extracted and ownership fixed for $username.${W}"
+        echo -e "${G}✓ debian-settings extracted and ownership fixed for $username.${W}"
         log_msg "SUCCESS: debian-settings.tar.gz extracted to /home/$username/ with correct ownership."
     else
-        echo -e "${Y}[!] Skipping debian-settings.tar.gz ? no valid user home directory.${W}"
-        log_msg "WARNING: debian-settings.tar.gz skipped ? username empty or /home/$username missing."
+        echo -e "${Y}[!] Skipping debian-settings.tar.gz — no valid user home directory.${W}"
+        log_msg "WARNING: debian-settings.tar.gz skipped — username empty or /home/$username missing."
     fi
 
     # Return to home before removing temp folder
