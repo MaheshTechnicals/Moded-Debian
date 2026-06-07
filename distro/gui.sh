@@ -133,6 +133,72 @@ note() {
 
 		 ${C}Enjoy :D${W}
 	EOF
+
+    # ── Shortcuts Reference Table ────────────────────────────────
+    echo -e "\n${C}╔══════════════════════════════════════════════════════════════╗${W}"
+    echo -e "${C}║        🚀  CUSTOM SHORTCUTS REFERENCE CHEATSHEET             ║${W}"
+    echo -e "${C}╠══════════════╦══════════════╦══════════════════════════════════╣${W}"
+    echo -e "${C}║  ${Y}SHORT       ${C}║  ${G}FULL CMD     ${C}║  ${W}DESCRIPTION                    ${C}║${W}"
+    echo -e "${C}╠══════════════╬══════════════╬══════════════════════════════════╣${W}"
+
+    # VNC
+    echo -e "${C}║  ${Y}vs          ${C}║  ${G}vncstart     ${C}║  ${W}Start VNC server               ${C}║${W}"
+    echo -e "${C}║  ${Y}vx          ${C}║  ${G}vncstop      ${C}║  ${W}Stop VNC server                ${C}║${W}"
+    echo -e "${C}╠══════════════╬══════════════╬══════════════════════════════════╣${W}"
+
+    # Python venv
+    echo -e "${C}║  ${Y}sv          ${C}║  ${G}start-venv   ${C}║  ${W}Create + activate .venv here   ${C}║${W}"
+    echo -e "${C}║  ${Y}sv <name>   ${C}║  ${G}start-venv   ${C}║  ${W}Create + activate custom venv  ${C}║${W}"
+    echo -e "${C}║  ${Y}sx          ${C}║  ${G}stop-venv    ${C}║  ${W}Deactivate current venv        ${C}║${W}"
+    echo -e "${C}║  ${Y}vinfo       ${C}║  ${G}venv-info    ${C}║  ${W}Show active venv details       ${C}║${W}"
+    echo -e "${C}╠══════════════╬══════════════╬══════════════════════════════════╣${W}"
+
+    # Navigation
+    echo -e "${C}║  ${Y}..          ${C}║  ${G}cd ..        ${C}║  ${W}Go up one directory            ${C}║${W}"
+    echo -e "${C}║  ${Y}...         ${C}║  ${G}cd ../..     ${C}║  ${W}Go up two directories          ${C}║${W}"
+    echo -e "${C}║  ${Y}l           ${C}║  ${G}ls           ${C}║  ${W}List files                     ${C}║${W}"
+    echo -e "${C}║  ${Y}ll          ${C}║  ${G}ls -alF      ${C}║  ${W}List files (detailed)          ${C}║${W}"
+    echo -e "${C}║  ${Y}la          ${C}║  ${G}ls -A        ${C}║  ${W}List all + hidden files        ${C}║${W}"
+    echo -e "${C}║  ${Y}cl          ${C}║  ${G}clear        ${C}║  ${W}Clear terminal                 ${C}║${W}"
+    echo -e "${C}╠══════════════╬══════════════╬══════════════════════════════════╣${W}"
+
+    # Git
+    echo -e "${C}║  ${Y}gs          ${C}║  ${G}git status   ${C}║  ${W}Show git status                ${C}║${W}"
+    echo -e "${C}║  ${Y}ga          ${C}║  ${G}git add .    ${C}║  ${W}Stage all changes              ${C}║${W}"
+    echo -e "${C}║  ${Y}gc \"msg\"    ${C}║  ${G}git commit   ${C}║  ${W}Commit with message            ${C}║${W}"
+    echo -e "${C}║  ${Y}gp          ${C}║  ${G}git push     ${C}║  ${W}Push to remote                 ${C}║${W}"
+    echo -e "${C}║  ${Y}gl          ${C}║  ${G}git log      ${C}║  ${W}Pretty graph log               ${C}║${W}"
+    echo -e "${C}║  ${Y}gd          ${C}║  ${G}git diff     ${C}║  ${W}Show uncommitted changes       ${C}║${W}"
+    echo -e "${C}║  ${Y}gb          ${C}║  ${G}git branch   ${C}║  ${W}List branches                  ${C}║${W}"
+    echo -e "${C}╠══════════════╬══════════════╬══════════════════════════════════╣${W}"
+
+    # System / APT
+    echo -e "${C}║  ${Y}update      ${C}║  ${G}apt update + ${C}║  ${W}Update & upgrade system        ${C}║${W}"
+    echo -e "${C}║              ${C}║  ${G}upgrade      ${C}║                                  ${C}║${W}"
+    echo -e "${C}║  ${Y}install     ${C}║  ${G}apt install  ${C}║  ${W}Install a package              ${C}║${W}"
+    echo -e "${C}║  ${Y}remove      ${C}║  ${G}apt remove   ${C}║  ${W}Remove a package               ${C}║${W}"
+    echo -e "${C}║  ${Y}purge       ${C}║  ${G}apt purge    ${C}║  ${W}Purge a package + configs      ${C}║${W}"
+    echo -e "${C}║  ${Y}autoremove  ${C}║  ${G}apt          ${C}║  ${W}Remove unused packages         ${C}║${W}"
+    echo -e "${C}║              ${C}║  ${G}autoremove   ${C}║                                  ${C}║${W}"
+    echo -e "${C}║  ${Y}search      ${C}║  ${G}apt-cache    ${C}║  ${W}Search for a package           ${C}║${W}"
+    echo -e "${C}║              ${C}║  ${G}search       ${C}║                                  ${C}║${W}"
+    echo -e "${C}╠══════════════╬══════════════╬══════════════════════════════════╣${W}"
+
+    # Info / Network
+    echo -e "${C}║  ${Y}myip        ${C}║  ${G}curl ifconf  ${C}║  ${W}Show public IP address         ${C}║${W}"
+    echo -e "${C}║  ${Y}ports       ${C}║  ${G}ss -tulpn    ${C}║  ${W}Show open ports                ${C}║${W}"
+    echo -e "${C}║  ${Y}meminfo     ${C}║  ${G}free -h      ${C}║  ${W}Show RAM usage                 ${C}║${W}"
+    echo -e "${C}║  ${Y}diskinfo    ${C}║  ${G}df -h        ${C}║  ${W}Show disk usage                ${C}║${W}"
+    echo -e "${C}╠══════════════╬══════════════╬══════════════════════════════════╣${W}"
+
+    # Zsh config
+    echo -e "${C}║  ${Y}zshconfig   ${C}║  ${G}nano ~/.zshrc${C}║  ${W}Edit Zsh config                ${C}║${W}"
+    echo -e "${C}║  ${Y}reload      ${C}║  ${G}source       ${C}║  ${W}Reload .zshrc live             ${C}║${W}"
+    echo -e "${C}║              ${C}║  ${G}~/.zshrc     ${C}║                                  ${C}║${W}"
+
+    echo -e "${C}╚══════════════╩══════════════╩══════════════════════════════════╝${W}"
+    echo -e " ${Y}Tip: ${W}Type any short alias — full command runs automatically!${W}\n"
+
     log_msg "=== Setup Completed Successfully ==="
 }
 
@@ -668,7 +734,50 @@ alias cp='cp -i'
 alias mv='mv -i'
 alias zshconfig='nano ~/.zshrc'
 alias reload='source ~/.zshrc && echo "✓ .zshrc reloaded"'
-# ─────────────────────────────────────────────────────────────────
+
+# == PYTHON VENV SHORTCUTS ========================================
+# start-venv / sv : create .venv in current dir (if needed) + activate
+# stop-venv  / sx : deactivate current venv
+# venv-info       : show active venv path and python version
+# NOTE: These MUST be functions (not aliases) — `source` cannot run via alias.
+
+start-venv() {
+    local venv_dir="${1:-.venv}"
+    if [[ ! -d "$venv_dir" ]]; then
+        echo "🐍 Creating virtual environment at ./$venv_dir ..."
+        python3 -m venv "$venv_dir" || { echo "✗ Failed. Is python3-venv installed?"; return 1; }
+        echo "✓ Virtual environment created."
+    fi
+    echo "🔌 Activating ./$venv_dir ..."
+    source "$venv_dir/bin/activate"
+    echo "✓ Venv active → $(python3 --version) | $(which python3)"
+}
+
+stop-venv() {
+    if [[ -z "$VIRTUAL_ENV" ]]; then
+        echo "⚠ No virtual environment is currently active."
+        return 1
+    fi
+    echo "🔌 Deactivating venv: $VIRTUAL_ENV"
+    deactivate
+    echo "✓ Venv deactivated."
+}
+
+venv-info() {
+    if [[ -n "$VIRTUAL_ENV" ]]; then
+        echo "🐍 Active venv : $VIRTUAL_ENV"
+        echo "   Python      : $(python3 --version)"
+        echo "   Pip         : $(pip --version 2>/dev/null || echo 'not found')"
+    else
+        echo "⚠ No virtual environment is currently active."
+    fi
+}
+
+# Short aliases that call the functions above
+alias sv='start-venv'
+alias sx='stop-venv'
+alias vinfo='venv-info'
+# ─────────────────────────────────────────────
 ZSHRC
 
         [[ "$owner" != "root" ]] && chown "$owner:$owner" "$zshrc"
@@ -706,7 +815,7 @@ ZSHRC
         _set_zsh_default "$username"
     fi
 
-    # ── System-wide shortcuts ─────────────────────────────────────
+    # ── System-wide shortcuts (bash users + /etc/profile) ────────
     cat >/etc/profile.d/mahesh_shortcuts.sh <<'EOF'
 alias l='ls --color=auto'
 alias cl='clear'
@@ -717,6 +826,45 @@ alias vs='vncstart'
 alias vx='vncstop'
 alias update='sudo apt-get update && sudo apt-get upgrade -y'
 alias install='sudo apt-get install -y'
+
+# == PYTHON VENV SHORTCUTS ========================================
+# Functions required — aliases cannot run `source`
+
+start-venv() {
+    local venv_dir="${1:-.venv}"
+    if [ ! -d "$venv_dir" ]; then
+        echo "🐍 Creating virtual environment at ./$venv_dir ..."
+        python3 -m venv "$venv_dir" || { echo "✗ Failed. Is python3-venv installed?"; return 1; }
+        echo "✓ Virtual environment created."
+    fi
+    echo "🔌 Activating ./$venv_dir ..."
+    . "$venv_dir/bin/activate"
+    echo "✓ Venv active → $(python3 --version) | $(which python3)"
+}
+
+stop-venv() {
+    if [ -z "$VIRTUAL_ENV" ]; then
+        echo "⚠ No virtual environment is currently active."
+        return 1
+    fi
+    echo "🔌 Deactivating venv: $VIRTUAL_ENV"
+    deactivate
+    echo "✓ Venv deactivated."
+}
+
+venv-info() {
+    if [ -n "$VIRTUAL_ENV" ]; then
+        echo "🐍 Active venv : $VIRTUAL_ENV"
+        echo "   Python      : $(python3 --version)"
+        echo "   Pip         : $(pip --version 2>/dev/null || echo 'not found')"
+    else
+        echo "⚠ No virtual environment is currently active."
+    fi
+}
+
+alias sv='start-venv'
+alias sx='stop-venv'
+alias vinfo='venv-info'
 EOF
     chmod 644 /etc/profile.d/mahesh_shortcuts.sh
 
