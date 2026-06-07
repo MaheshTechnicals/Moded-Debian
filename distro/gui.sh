@@ -873,6 +873,133 @@ EOF
 }
 
 
+# ─────────────────────────────────────────────
+# 📋 mkmoded-debian — system-wide help command
+# Usage: mkmoded-debian -h
+# Shows all custom shortcuts in a colored table.
+# Installed to /usr/local/bin so any user can run it.
+# ─────────────────────────────────────────────
+install_mkmoded_debian() {
+    local bin_path="/usr/local/bin/mkmoded-debian"
+
+    cat > "$bin_path" << 'HELPSCRIPT'
+#!/bin/bash
+# mkmoded-debian -h  →  Show all custom shortcuts
+# Created by Mahesh Technicals — Moded Debian Setup
+
+R="$(printf '\033[1;31m')"
+G="$(printf '\033[1;32m')"
+Y="$(printf '\033[1;33m')"
+W="$(printf '\033[1;37m')"
+C="$(printf '\033[1;36m')"
+M="$(printf '\033[1;35m')"
+
+show_help() {
+    clear
+    echo -e "${C}    ____  __________  _______    _   __"
+    echo -e "${Y}   / __ \/ ____/ __ )/  _/   |  / | / /"
+    echo -e "${G}  / / / / __/ / __  |/ // /| | /  |/ / "
+    echo -e "${C} / /_/ / /___/ /_/ // // ___ |/ /|  /  "
+    echo -e "${Y}/_____/_____/_____/___/_/  |_/_/ |_/   "
+    echo -e "${G}💻 Debian GUI Setup Script by Mahesh Technicals\n${W}"
+
+    echo -e "${C}╔══════════════════════════════════════════════════════════════╗${W}"
+    echo -e "${C}║        🚀  CUSTOM SHORTCUTS REFERENCE CHEATSHEET             ║${W}"
+    echo -e "${C}╠══════════════╦══════════════╦══════════════════════════════════╣${W}"
+    echo -e "${C}║  ${Y}SHORT       ${C}║  ${G}FULL CMD     ${C}║  ${W}DESCRIPTION                    ${C}║${W}"
+    echo -e "${C}╠══════════════╬══════════════╬══════════════════════════════════╣${W}"
+
+    # VNC
+    echo -e "${C}║  ${M}── VNC ──    ${C}║              ║                                  ║${W}"
+    echo -e "${C}║  ${Y}vs          ${C}║  ${G}vncstart     ${C}║  ${W}Start VNC server               ${C}║${W}"
+    echo -e "${C}║  ${Y}vx          ${C}║  ${G}vncstop      ${C}║  ${W}Stop VNC server                ${C}║${W}"
+    echo -e "${C}╠══════════════╬══════════════╬══════════════════════════════════╣${W}"
+
+    # Python venv
+    echo -e "${C}║  ${M}── Python Venv ──           ║                                  ║${W}"
+    echo -e "${C}║  ${Y}sv          ${C}║  ${G}start-venv   ${C}║  ${W}Create + activate .venv here   ${C}║${W}"
+    echo -e "${C}║  ${Y}sv <name>   ${C}║  ${G}start-venv   ${C}║  ${W}Create + activate custom venv  ${C}║${W}"
+    echo -e "${C}║  ${Y}sx          ${C}║  ${G}stop-venv    ${C}║  ${W}Deactivate current venv        ${C}║${W}"
+    echo -e "${C}║  ${Y}vinfo       ${C}║  ${G}venv-info    ${C}║  ${W}Show active venv details       ${C}║${W}"
+    echo -e "${C}╠══════════════╬══════════════╬══════════════════════════════════╣${W}"
+
+    # Navigation
+    echo -e "${C}║  ${M}── Navigation ──            ║                                  ║${W}"
+    echo -e "${C}║  ${Y}..          ${C}║  ${G}cd ..        ${C}║  ${W}Go up one directory            ${C}║${W}"
+    echo -e "${C}║  ${Y}...         ${C}║  ${G}cd ../..     ${C}║  ${W}Go up two directories          ${C}║${W}"
+    echo -e "${C}║  ${Y}l           ${C}║  ${G}ls           ${C}║  ${W}List files                     ${C}║${W}"
+    echo -e "${C}║  ${Y}ll          ${C}║  ${G}ls -alF      ${C}║  ${W}List files (detailed)          ${C}║${W}"
+    echo -e "${C}║  ${Y}la          ${C}║  ${G}ls -A        ${C}║  ${W}List all + hidden files        ${C}║${W}"
+    echo -e "${C}║  ${Y}cl          ${C}║  ${G}clear        ${C}║  ${W}Clear terminal                 ${C}║${W}"
+    echo -e "${C}╠══════════════╬══════════════╬══════════════════════════════════╣${W}"
+
+    # Git
+    echo -e "${C}║  ${M}── Git ──    ${C}║              ║                                  ║${W}"
+    echo -e "${C}║  ${Y}gs          ${C}║  ${G}git status   ${C}║  ${W}Show git status                ${C}║${W}"
+    echo -e "${C}║  ${Y}ga          ${C}║  ${G}git add .    ${C}║  ${W}Stage all changes              ${C}║${W}"
+    echo -e "${C}║  ${Y}gc \"msg\"    ${C}║  ${G}git commit   ${C}║  ${W}Commit with message            ${C}║${W}"
+    echo -e "${C}║  ${Y}gp          ${C}║  ${G}git push     ${C}║  ${W}Push to remote                 ${C}║${W}"
+    echo -e "${C}║  ${Y}gl          ${C}║  ${G}git log      ${C}║  ${W}Pretty graph log               ${C}║${W}"
+    echo -e "${C}║  ${Y}gd          ${C}║  ${G}git diff     ${C}║  ${W}Show uncommitted changes       ${C}║${W}"
+    echo -e "${C}║  ${Y}gb          ${C}║  ${G}git branch   ${C}║  ${W}List branches                  ${C}║${W}"
+    echo -e "${C}╠══════════════╬══════════════╬══════════════════════════════════╣${W}"
+
+    # APT
+    echo -e "${C}║  ${M}── APT Package Manager ──   ║                                  ║${W}"
+    echo -e "${C}║  ${Y}update      ${C}║  ${G}apt update+  ${C}║  ${W}Update & upgrade system        ${C}║${W}"
+    echo -e "${C}║              ${C}║  ${G}upgrade      ${C}║                                  ${C}║${W}"
+    echo -e "${C}║  ${Y}install     ${C}║  ${G}apt install  ${C}║  ${W}Install a package              ${C}║${W}"
+    echo -e "${C}║  ${Y}remove      ${C}║  ${G}apt remove   ${C}║  ${W}Remove a package               ${C}║${W}"
+    echo -e "${C}║  ${Y}purge       ${C}║  ${G}apt purge    ${C}║  ${W}Purge package + configs        ${C}║${W}"
+    echo -e "${C}║  ${Y}autoremove  ${C}║  ${G}apt          ${C}║  ${W}Remove unused packages         ${C}║${W}"
+    echo -e "${C}║              ${C}║  ${G}autoremove   ${C}║                                  ${C}║${W}"
+    echo -e "${C}║  ${Y}search      ${C}║  ${G}apt-cache    ${C}║  ${W}Search for a package           ${C}║${W}"
+    echo -e "${C}║              ${C}║  ${G}search       ${C}║                                  ${C}║${W}"
+    echo -e "${C}╠══════════════╬══════════════╬══════════════════════════════════╣${W}"
+
+    # System Info
+    echo -e "${C}║  ${M}── System Info ──           ║                                  ║${W}"
+    echo -e "${C}║  ${Y}myip        ${C}║  ${G}curl ifconf  ${C}║  ${W}Show public IP address         ${C}║${W}"
+    echo -e "${C}║  ${Y}ports       ${C}║  ${G}ss -tulpn    ${C}║  ${W}Show open ports                ${C}║${W}"
+    echo -e "${C}║  ${Y}meminfo     ${C}║  ${G}free -h      ${C}║  ${W}Show RAM usage                 ${C}║${W}"
+    echo -e "${C}║  ${Y}diskinfo    ${C}║  ${G}df -h        ${C}║  ${W}Show disk usage                ${C}║${W}"
+    echo -e "${C}╠══════════════╬══════════════╬══════════════════════════════════╣${W}"
+
+    # Zsh
+    echo -e "${C}║  ${M}── Zsh Config ──            ║                                  ║${W}"
+    echo -e "${C}║  ${Y}zshconfig   ${C}║  ${G}nano ~/.zshrc${C}║  ${W}Edit Zsh config                ${C}║${W}"
+    echo -e "${C}║  ${Y}reload      ${C}║  ${G}source       ${C}║  ${W}Reload .zshrc live             ${C}║${W}"
+    echo -e "${C}║              ${C}║  ${G}~/.zshrc     ${C}║                                  ${C}║${W}"
+    echo -e "${C}╚══════════════╩══════════════╩══════════════════════════════════╝${W}"
+
+    echo -e "\n ${Y}Usage:${W}"
+    echo -e "   ${C}mkmoded-debian -h${W}   →  Show this shortcuts table"
+    echo -e "   ${C}mkmoded-debian -v${W}   →  Show script version info\n"
+    echo -e " ${Y}Tip: ${W}Type any short alias — full command runs automatically!${W}\n"
+}
+
+show_version() {
+    echo -e "${G}mkmoded-debian${W} — Moded Debian Setup Helper"
+    echo -e "Version  : ${Y}1.0${W}"
+    echo -e "Author   : ${C}Mahesh Technicals${W}"
+    echo -e "Usage    : ${W}mkmoded-debian -h${W}"
+}
+
+case "${1:-}" in
+    -h|--help)  show_help ;;
+    -v|--version) show_version ;;
+    *)
+        echo -e "${Y}Usage: mkmoded-debian -h${W}   (show shortcuts table)"
+        echo -e "       ${Y}mkmoded-debian -v${W}   (show version)"
+        ;;
+esac
+HELPSCRIPT
+
+    chmod +x "$bin_path"
+    echo -e "${G}✓ mkmoded-debian installed → run: mkmoded-debian -h${W}"
+    log_msg "SUCCESS: mkmoded-debian helper installed at $bin_path"
+}
+
 config() {
     banner
     sound_fix
@@ -881,6 +1008,7 @@ config() {
     add_alias_l
     add_alias_cl
     setup_zsh
+    install_mkmoded_debian
 
     run_silent "Upgrading base packages" apt-get upgrade -y
     run_silent "Installing UI theme toolkits" apt-get install -y gtk2-engines-murrine gtk2-engines-pixbuf sassc optipng inkscape libglib2.0-dev-bin
