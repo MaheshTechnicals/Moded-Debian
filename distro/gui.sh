@@ -60,21 +60,36 @@ fi
 downloader() {
     local dl_path="$1"
     local dl_url="$2"
+    local filename
+    filename="$(basename "$dl_path")"
     [[ -e "$dl_path" ]] && rm -rf "$dl_path"
     log_msg "Downloading $dl_url → $dl_path"
-    echo -e "${C}Downloading: ${Y}$(basename "$dl_path")...${W}"
-    # FIX: use --progress-bar so the user can see download progress on screen
-    # --silent was hiding all output making it look frozen
+
+    echo -e ""
+    echo -e "${C}  ↓ Downloading: ${Y}${filename}${W}"
+    echo -e "${C}  ─────────────────────────────────────────${W}"
+
+    # --progress-bar writes to stderr and uses \r (carriage return) to update
+    # the same line. On proot/Android terminals this causes overlap with next
+    # echo. Fix: redirect stderr to stdout so it respects our terminal flow,
+    # then print a clean newline AFTER curl exits to push cursor to next line.
     curl --progress-bar --insecure --fail \
         --retry-connrefused --retry 3 --retry-delay 2 \
-        --location --output "$dl_path" "$dl_url"
-    if [[ $? -eq 0 ]]; then
-        echo -e "${G}✓ Downloaded: $(basename "$dl_path")${W}"
-        log_msg "SUCCESS: Downloaded $(basename "$dl_path")"
+        --location --output "$dl_path" "$dl_url" 2>&1
+    local curl_exit=$?
+
+    # Explicit newline — curl's progress bar ends with \r not \n on some terminals
+    echo ""
+
+    if [[ $curl_exit -eq 0 ]]; then
+        echo -e "${G}  ✓ Done: ${filename}${W}"
+        log_msg "SUCCESS: Downloaded ${filename}"
     else
-        echo -e "${R}✗ Failed to download: $(basename "$dl_path")${W}"
-        log_msg "ERROR: Failed to download $dl_url"
+        echo -e "${R}  ✗ Failed: ${filename} (Check $LOG_FILE)${W}"
+        log_msg "ERROR: Failed to download $dl_url (exit $curl_exit)"
     fi
+    echo -e "${C}  ─────────────────────────────────────────${W}"
+    echo -e ""
 }
 
 check_root() {
@@ -874,17 +889,17 @@ EOF
 
 
 # ─────────────────────────────────────────────
-# 📋 mkmoded-debian — system-wide help command
-# Usage: mkmoded-debian -h
+# 📋 moded-debian — system-wide help command
+# Usage: moded-debian -h
 # Shows all custom shortcuts in a colored table.
 # Installed to /usr/local/bin so any user can run it.
 # ─────────────────────────────────────────────
 install_mkmoded_debian() {
-    local bin_path="/usr/local/bin/mkmoded-debian"
+    local bin_path="/usr/local/bin/moded-debian"
 
     cat > "$bin_path" << 'HELPSCRIPT'
 #!/bin/bash
-# mkmoded-debian -h  →  Show all custom shortcuts
+# moded-debian -h  →  Show all custom shortcuts
 # Created by Mahesh Technicals — Moded Debian Setup
 
 R="$(printf '\033[1;31m')"
@@ -973,31 +988,31 @@ show_help() {
     echo -e "${C}╚══════════════╩══════════════╩══════════════════════════════════╝${W}"
 
     echo -e "\n ${Y}Usage:${W}"
-    echo -e "   ${C}mkmoded-debian -h${W}   →  Show this shortcuts table"
-    echo -e "   ${C}mkmoded-debian -v${W}   →  Show script version info\n"
+    echo -e "   ${C}moded-debian -h${W}   →  Show this shortcuts table"
+    echo -e "   ${C}moded-debian -v${W}   →  Show script version info\n"
     echo -e " ${Y}Tip: ${W}Type any short alias — full command runs automatically!${W}\n"
 }
 
 show_version() {
-    echo -e "${G}mkmoded-debian${W} — Moded Debian Setup Helper"
+    echo -e "${G}moded-debian${W} — Moded Debian Setup Helper"
     echo -e "Version  : ${Y}1.0${W}"
     echo -e "Author   : ${C}Mahesh Technicals${W}"
-    echo -e "Usage    : ${W}mkmoded-debian -h${W}"
+    echo -e "Usage    : ${W}moded-debian -h${W}"
 }
 
 case "${1:-}" in
     -h|--help)  show_help ;;
     -v|--version) show_version ;;
     *)
-        echo -e "${Y}Usage: mkmoded-debian -h${W}   (show shortcuts table)"
-        echo -e "       ${Y}mkmoded-debian -v${W}   (show version)"
+        echo -e "${Y}Usage: moded-debian -h${W}   (show shortcuts table)"
+        echo -e "       ${Y}moded-debian -v${W}   (show version)"
         ;;
 esac
 HELPSCRIPT
 
     chmod +x "$bin_path"
-    echo -e "${G}✓ mkmoded-debian installed → run: mkmoded-debian -h${W}"
-    log_msg "SUCCESS: mkmoded-debian helper installed at $bin_path"
+    echo -e "${G}✓ moded-debian installed → run: moded-debian -h${W}"
+    log_msg "SUCCESS: moded-debian helper installed at $bin_path"
 }
 
 config() {
@@ -1080,4 +1095,3 @@ package
 install_softwares
 config
 note
-
