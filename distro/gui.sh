@@ -230,7 +230,7 @@ package() {
     run_silent "Configuring DPKG" dpkg --configure -a
     run_silent "Holding udisks2 package changes" apt-mark hold udisks2
 
-    packs=(sudo gnupg2 curl nano git xz-utils at-spi2-core xfce4 xfce4-goodies xfce4-terminal librsvg2-common menu inetutils-tools dialog exo-utils tigervnc-standalone-server tigervnc-common tigervnc-tools dbus-x11 fonts-beng fonts-beng-extra gtk2-engines-murrine gtk2-engines-pixbuf apt-transport-https gh)
+    packs=(sudo gnupg2 curl nano git xz-utils unzip at-spi2-core xfce4 xfce4-goodies xfce4-terminal librsvg2-common menu inetutils-tools dialog exo-utils tigervnc-standalone-server tigervnc-common tigervnc-tools dbus-x11 fonts-beng fonts-beng-extra gtk2-engines-murrine gtk2-engines-pixbuf apt-transport-https gh)
 
     for hulu in "${packs[@]}"; do
         if ! dpkg -s "$hulu" &>/dev/null; then
@@ -1030,7 +1030,8 @@ config() {
     run_silent "Upgrading base packages" apt-get upgrade -y
     run_silent "Installing UI theme toolkits" apt-get install -y gtk2-engines-murrine gtk2-engines-pixbuf sassc optipng inkscape libglib2.0-dev-bin
 
-    mv -vf /usr/share/backgrounds/xfce/xfce-verticals.svg /usr/share/backgrounds/xfce/xfce-verticals-old.svg >>"$LOG_FILE" 2>&1 || true
+    [[ -f /usr/share/backgrounds/xfce/xfce-verticals.svg ]] && \
+        mv -vf /usr/share/backgrounds/xfce/xfce-verticals.svg /usr/share/backgrounds/xfce/xfce-verticals-old.svg >>"$LOG_FILE" 2>&1 || true
 
     # FIX: cd was inside a subshell { } so the parent shell's working directory
     # never changed — all downloader calls wrote files to $HOME not $temp_folder
@@ -1042,7 +1043,7 @@ config() {
 
     echo -e "${R} [${W}-${R}]${C} Downloading Required Files..\n${W}"
     downloader "fonts.tar.gz"           "https://github.com/MaheshTechnicals/Moded-Debian/releases/download/config/fonts.tar.gz"
-    downloader "icons.tar.gz"           "https://github.com/MaheshTechnicals/Moded-Debian/releases/download/config/icons.tar.gz"
+    downloader "candy-icons.zip"        "https://github.com/EliverLara/candy-icons/archive/refs/heads/master.zip"
     downloader "wallpaper.tar.gz"       "https://github.com/MaheshTechnicals/Moded-Debian/releases/download/config/wallpaper.tar.gz"
     downloader "gtk-themes.tar.gz"      "https://github.com/MaheshTechnicals/Moded-Debian/releases/download/config/gtk-themes.tar.gz"
     downloader "debian-settings.tar.gz" "https://github.com/MaheshTechnicals/Moded-Debian/releases/download/config/debian-settings.tar.gz"
@@ -1056,7 +1057,9 @@ config() {
     mkdir -p "/usr/share/themes/"
 
     tar -xvzf fonts.tar.gz           -C "/usr/local/share/fonts/"      >>"$LOG_FILE" 2>&1
-    tar -xvzf icons.tar.gz           -C "/usr/share/icons/"            >>"$LOG_FILE" 2>&1
+    rm -rf "/usr/share/icons/candy-icons"
+    unzip -qo candy-icons.zip -d "/usr/share/icons/" >>"$LOG_FILE" 2>&1
+    [[ -d "/usr/share/icons/candy-icons-master" ]] && mv -f "/usr/share/icons/candy-icons-master" "/usr/share/icons/candy-icons"
     tar -xvzf wallpaper.tar.gz       -C "/usr/share/backgrounds/xfce/" >>"$LOG_FILE" 2>&1
     tar -xvzf gtk-themes.tar.gz      -C "/usr/share/themes/"           >>"$LOG_FILE" 2>&1
 
