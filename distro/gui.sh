@@ -317,6 +317,7 @@ EOF
 install_firefox() {
     if [[ $(command -v firefox) ]]; then
         echo -e "${Y}Firefox is already Installed!${W}"
+        log_msg "Skipped: Firefox already installed."
         return
     fi
     echo -e "${C}Running: ${Y}Installing Firefox...${W}"
@@ -335,6 +336,7 @@ install_firefox() {
 install_brave() {
     if [[ $(command -v brave-browser) ]]; then
         echo -e "${Y}Brave is already Installed!${W}"
+        log_msg "Skipped: Brave already installed."
     else
         echo -e "${C}Running: ${Y}Installing Brave...${W}"
         log_msg "STARTING: Installing Brave"
@@ -1028,7 +1030,7 @@ config() {
     run_silent "Upgrading base packages" apt-get upgrade -y
     run_silent "Installing UI theme toolkits" apt-get install -y gtk2-engines-murrine gtk2-engines-pixbuf sassc optipng inkscape libglib2.0-dev-bin
 
-    mv -vf /usr/share/backgrounds/xfce/xfce-verticals.png /usr/share/backgrounds/xfce/xfce-verticals-old.png >>"$LOG_FILE" 2>&1 || true
+    mv -vf /usr/share/backgrounds/xfce/xfce-verticals.svg /usr/share/backgrounds/xfce/xfce-verticals-old.svg >>"$LOG_FILE" 2>&1 || true
 
     # FIX: cd was inside a subshell { } so the parent shell's working directory
     # never changed — all downloader calls wrote files to $HOME not $temp_folder
